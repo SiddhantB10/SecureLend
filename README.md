@@ -58,15 +58,18 @@ Use either:
 
 Service settings:
 - Root Directory: `ml-service`
-- Build Command: `pip install -r requirements.txt && python training/train_model.py`
+- Build Command: `pip install -r requirements.txt`
 - Start Command: `uvicorn app:app --host 0.0.0.0 --port $PORT`
 - Health Check Path: `/health`
 
-Required env vars:
+Recommended env vars for Render:
 
 ```env
+PYTHON_VERSION=3.11.9
 CORS_ORIGINS=https://your-backend.onrender.com
 ```
+
+Model files are committed in `ml-service/models/`, so retraining in the build step is unnecessary and can slow down free-tier deploys.
 
 ## 4) Deploy Backend API on Render
 
@@ -147,7 +150,6 @@ cd ml-service
 python -m venv .venv
 .venv\Scripts\activate
 pip install -r requirements.txt
-python training/train_model.py
 uvicorn app:app --reload --port 8000
 
 # Frontend

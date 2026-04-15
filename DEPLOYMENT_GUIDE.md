@@ -184,7 +184,7 @@ Use this complete set in Render Environment:
 ```env
 NODE_ENV=production
 MONGODB_URI=mongodb+srv://ATLAS_USER:ATLAS_PASSWORD@CLUSTER_HOST/securelend?retryWrites=true&w=majority
-JWT_SECRET=Seclend37grp
+JWT_SECRET=seclend37grp
 JWT_EXPIRES_IN=7d
 ML_SERVICE_URL=https://YOUR_ML_RENDER_URL
 CORS_ORIGINS=https://YOUR_FRONTEND_VERCEL_URL
