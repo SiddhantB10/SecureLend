@@ -57,16 +57,32 @@ exports.applyLoan = async (req, res) => {
     const applicantPayload = buildApplicantPayload(req.body);
     const formulaBundle = computeFormulaScore(applicantPayload);
 
-    const prediction = await predictLoanRisk({
-      ...applicantPayload,
-      loanType: formulaBundle.loanType,
-      employmentStatus: formulaBundle.employmentStatus,
-      formulaScore: formulaBundle.formulaScore,
-    });
+    let prediction;
+    let mlAvailable = true;
+    let mlWarning = '';
+
+    try {
+      prediction = await predictLoanRisk({
+        ...applicantPayload,
+        loanType: formulaBundle.loanType,
+        employmentStatus: formulaBundle.employmentStatus,
+        formulaScore: formulaBundle.formulaScore,
+      });
+    } catch (mlError) {
+      mlAvailable = false;
+      mlWarning = String(mlError.message || 'ML service unavailable');
+      prediction = {
+        mlScore: formulaBundle.formulaScore,
+        model: 'formula_fallback',
+        explanation: 'ML service is unavailable, so formula-based risk scoring was used.',
+      };
+    }
 
     const mlScore = clampRiskScore(Number(prediction.mlScore));
     const formulaScore = clampRiskScore(formulaBundle.formulaScore);
-    const finalScore = clampRiskScore(0.6 * mlScore + 0.4 * formulaScore);
+    const finalScore = mlAvailable
+      ? clampRiskScore(0.6 * mlScore + 0.4 * formulaScore)
+      : formulaScore;
     const category = determineCategory(finalScore);
     const aiDecision = determineAiDecision(finalScore);
 
@@ -125,6 +141,10 @@ exports.applyLoan = async (req, res) => {
       category,
       explanation,
     };
+
+    if (!mlAvailable) {
+      predictionResponse.mlWarning = mlWarning;
+    }
 
     return res.status(201).json({
       message: 'Loan application submitted successfully',
