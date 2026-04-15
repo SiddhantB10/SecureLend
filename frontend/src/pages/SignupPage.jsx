@@ -4,6 +4,24 @@ import AuthForm from '../components/AuthForm';
 import { useAuth } from '../context/AuthContext';
 
 const indianPhoneRegex = /^(?:\+91[-\s]?)?[6-9]\d{9}$/;
+const apiBaseUrl = import.meta.env.VITE_API_URL || 'http://127.0.0.1:5000';
+
+const getSignupErrorMessage = (error) => {
+  const apiPayload = error.response?.data;
+  const firstValidationMessage = apiPayload?.errors?.[0]?.message;
+  if (firstValidationMessage) return firstValidationMessage;
+  if (apiPayload?.message) return apiPayload.message;
+
+  if (error.code === 'ECONNABORTED') {
+    return 'Signup request timed out. Please try again.';
+  }
+
+  if (error.code === 'ERR_NETWORK' || !error.response) {
+    return `Unable to reach backend API (${apiBaseUrl}). Check backend health, VITE_API_URL, and CORS_ORIGINS.`;
+  }
+
+  return error.message || 'Unable to create account';
+};
 
 const SignupPage = () => {
   const navigate = useNavigate();
@@ -36,10 +54,7 @@ const SignupPage = () => {
       const response = await signup(values);
       navigate(response.user.role === 'admin' ? '/admin' : '/dashboard');
     } catch (error) {
-      const apiPayload = error.response?.data;
-      const firstValidationMessage = apiPayload?.errors?.[0]?.message;
-      const detailedReason = firstValidationMessage || apiPayload?.message;
-      setErrors({ form: detailedReason || 'Unable to create account' });
+      setErrors({ form: getSignupErrorMessage(error) });
     }
   };
 
