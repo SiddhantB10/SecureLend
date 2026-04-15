@@ -7,7 +7,33 @@ const loanRoutes = require('./routes/loanRoutes');
 
 const app = express();
 
-app.use(cors({ origin: true, credentials: true }));
+const parseAllowedOrigins = () => {
+  const allowedOriginsRaw = process.env.CORS_ORIGINS || process.env.FRONTEND_URL || '';
+  return allowedOriginsRaw
+    .split(',')
+    .map((origin) => origin.trim())
+    .filter(Boolean);
+};
+
+const allowedOrigins = parseAllowedOrigins();
+
+const corsOptions = {
+  origin(origin, callback) {
+    if (!origin) {
+      return callback(null, true);
+    }
+
+    if (allowedOrigins.length === 0 || allowedOrigins.includes(origin)) {
+      return callback(null, true);
+    }
+
+    return callback(new Error(`CORS blocked for origin: ${origin}`));
+  },
+  credentials: true,
+};
+
+app.use(cors(corsOptions));
+app.set('trust proxy', 1);
 app.use(helmet());
 app.use(express.json({ limit: '2mb' }));
 app.use(morgan('dev'));

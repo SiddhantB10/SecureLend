@@ -5,6 +5,8 @@ const abi = [
   'function getLoan(uint256 loanId) public view returns (uint256 loanId, string loanType, uint256 riskScore, string decision, uint256 timestamp)',
 ];
 
+const resolveRpcUrl = () => process.env.BLOCKCHAIN_RPC_URL || process.env.SEPOLIA_RPC_URL || process.env.GANACHE_RPC_URL;
+
 const toChainLoanId = (loanId) => {
   const normalized = loanId.toString().replace(/^0x/, '');
   return BigInt(`0x${normalized}`);
@@ -14,7 +16,7 @@ const toScaledRisk = (riskScore) => Math.round(Number(riskScore) * 1000);
 
 const shouldUseBlockchain = () =>
   Boolean(
-    process.env.GANACHE_RPC_URL &&
+    resolveRpcUrl() &&
       process.env.BLOCKCHAIN_PRIVATE_KEY &&
       process.env.BLOCKCHAIN_CONTRACT_ADDRESS
   );
@@ -24,7 +26,7 @@ const getContract = () => {
     return null;
   }
 
-  const provider = new ethers.JsonRpcProvider(process.env.GANACHE_RPC_URL);
+  const provider = new ethers.JsonRpcProvider(resolveRpcUrl());
   const wallet = new ethers.Wallet(process.env.BLOCKCHAIN_PRIVATE_KEY, provider);
   return new ethers.Contract(process.env.BLOCKCHAIN_CONTRACT_ADDRESS, abi, wallet);
 };

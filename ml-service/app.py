@@ -1,8 +1,10 @@
 from __future__ import annotations
 
+import os
 from pathlib import Path
 
 import joblib
+from dotenv import load_dotenv
 from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel, ConfigDict, Field
@@ -15,11 +17,20 @@ MODEL_DIR = BASE_DIR / 'models'
 RF_MODEL_PATH = MODEL_DIR / 'random_forest.pkl'
 LOGREG_MODEL_PATH = MODEL_DIR / 'logistic_regression.pkl'
 
+load_dotenv()
+
+
+def parse_allowed_origins() -> list[str]:
+    origins_raw = os.getenv('CORS_ORIGINS', '')
+    return [origin.strip() for origin in origins_raw.split(',') if origin.strip()]
+
 app = FastAPI(title='SecureLend ML Service', version='1.0.0')
+
+allowed_origins = parse_allowed_origins() or ['*']
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=['*'],
+    allow_origins=allowed_origins,
     allow_credentials=True,
     allow_methods=['*'],
     allow_headers=['*'],
