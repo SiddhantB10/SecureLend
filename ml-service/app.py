@@ -7,7 +7,7 @@ from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel, ConfigDict, Field
 
-from model_utils import build_explanation, engineer_features, risk_category, top_feature_importances
+from model_utils import build_explanation, engineer_features, top_feature_importances
 from training.train_model import train_and_save_models
 
 BASE_DIR = Path(__file__).resolve().parent
@@ -29,20 +29,24 @@ app.add_middleware(
 class PredictionRequest(BaseModel):
     model_config = ConfigDict(extra='ignore')
 
+    loanType: str = Field(default='personal')
     income: float = Field(gt=0)
-    creditScore: float = Field(ge=300, le=850)
+    creditScore: float = Field(ge=300, le=900)
     loanAmount: float = Field(gt=0)
-    employment: str
+    existingDebt: float = Field(ge=0)
+    propertyValue: float | None = Field(default=None, ge=0)
+    employmentStatus: str | None = Field(default='stable')
+    formulaScore: float | None = Field(default=None, ge=0)
 
 
 class PredictionResponse(BaseModel):
-    riskScore: float
-    category: str
+    loanType: str
+    mlScore: float
     explanation: str
     featureImportance: list[dict[str, float | str]]
     baselineRiskScore: float
     model: str
-    policyThresholds: dict[str, float]
+    riskScore: float
 
 
 rf_pipeline = None
@@ -74,9 +78,8 @@ def predict(request: PredictionRequest) -> dict[str, object]:
         rf, logreg = load_models()
         feature_bundle = engineer_features(request.model_dump())
 
-        risk_score = float(rf.predict_proba(feature_bundle.frame)[0][1])
+        ml_score = float(rf.predict_proba(feature_bundle.frame)[0][1])
         baseline_score = float(logreg.predict_proba(feature_bundle.frame)[0][1])
-        category = risk_category(risk_score)
 
         preprocessor = rf.named_steps['preprocessor']
         classifier = rf.named_steps['classifier']
@@ -86,19 +89,16 @@ def predict(request: PredictionRequest) -> dict[str, object]:
             list(classifier.feature_importances_),
         )
 
-        explanation = build_explanation(feature_importance, feature_bundle.engineered, risk_score)
+        explanation = build_explanation(feature_importance, feature_bundle.engineered, ml_score)
 
         return {
-            'riskScore': round(risk_score, 4),
-            'category': category,
+            'loanType': feature_bundle.engineered['loanType'],
+            'mlScore': round(ml_score, 4),
             'explanation': explanation,
             'featureImportance': feature_importance,
             'baselineRiskScore': round(baseline_score, 4),
             'model': 'random_forest',
-            'policyThresholds': {
-                'lowMaxExclusive': 0.3,
-                'mediumMaxInclusive': 0.7,
-            },
+            'riskScore': round(ml_score, 4),
         }
     except Exception as error:
         raise HTTPException(status_code=500, detail=f'Prediction failed: {error}') from error

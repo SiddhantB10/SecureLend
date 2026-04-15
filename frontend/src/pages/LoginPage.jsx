@@ -40,9 +40,9 @@ const LoginPage = () => {
       <div className="mx-auto grid min-h-[calc(100vh-6rem)] max-w-6xl place-items-center lg:grid-cols-2 lg:gap-12">
         <div className="hidden lg:block">
           <p className="text-xs uppercase tracking-[0.35em] text-neon-500/80">SecureLend</p>
-          <h1 className="mt-4 max-w-lg text-5xl font-semibold leading-tight">Sign in to monitor loan risk and manage applications.</h1>
+          <h1 className="mt-4 max-w-lg text-5xl font-semibold leading-tight">Sign in to manage your loan applications with confidence.</h1>
           <p className="mt-6 max-w-xl text-lg leading-8 text-white/60">
-            Review applications, see explainable risk scores, and track admin decisions through the blockchain audit trail.
+            Review status updates, check application details, and stay informed throughout each lending decision.
           </p>
         </div>
         <div className="w-full max-w-md">

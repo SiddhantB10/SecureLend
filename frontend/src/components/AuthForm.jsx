@@ -11,6 +11,7 @@ const AuthForm = ({
   loading,
 }) => {
   const isLogin = mode === 'login';
+  const controlClass = 'secure-form-control';
 
   return (
     <motion.form
@@ -26,7 +27,7 @@ const AuthForm = ({
         <p className="mt-2 text-sm text-white/60">
           {isLogin
             ? 'Sign in to review your loan applications and monitoring status.'
-            : 'Join SecureLend to apply for loans with AI risk analysis.'}
+            : 'Create your account to apply for loans and manage your application journey in INR.'}
         </p>
       </div>
 
@@ -39,8 +40,8 @@ const AuthForm = ({
               name="name"
               value={values.name}
               onChange={onChange}
-              className="w-full rounded-2xl border border-white/10 bg-black/60 px-4 py-3 text-white outline-none transition placeholder:text-white/30 focus:border-neon-500/60"
-              placeholder="Amina Carter"
+              className={controlClass}
+              placeholder="Aarav Sharma"
             />
             {errors.name ? <span className="text-xs text-red-400">{errors.name}</span> : null}
           </label>
@@ -53,7 +54,7 @@ const AuthForm = ({
             name="email"
             value={values.email}
             onChange={onChange}
-            className="w-full rounded-2xl border border-white/10 bg-black/60 px-4 py-3 text-white outline-none transition placeholder:text-white/30 focus:border-neon-500/60"
+            className={controlClass}
             placeholder="you@securelend.com"
           />
           {errors.email ? <span className="text-xs text-red-400">{errors.email}</span> : null}
@@ -66,7 +67,7 @@ const AuthForm = ({
             name="password"
             value={values.password}
             onChange={onChange}
-            className="w-full rounded-2xl border border-white/10 bg-black/60 px-4 py-3 text-white outline-none transition placeholder:text-white/30 focus:border-neon-500/60"
+            className={controlClass}
             placeholder="At least 8 characters"
           />
           {errors.password ? <span className="text-xs text-red-400">{errors.password}</span> : null}
@@ -80,8 +81,8 @@ const AuthForm = ({
               name="phone"
               value={values.phone}
               onChange={onChange}
-              className="w-full rounded-2xl border border-white/10 bg-black/60 px-4 py-3 text-white outline-none transition placeholder:text-white/30 focus:border-neon-500/60"
-              placeholder="+1 555 010 4512"
+              className={controlClass}
+              placeholder="+91 98XXXXXXXX"
             />
             {errors.phone ? <span className="text-xs text-red-400">{errors.phone}</span> : null}
           </label>
@@ -93,7 +94,7 @@ const AuthForm = ({
       <button
         type="submit"
         disabled={loading}
-        className="mt-6 w-full rounded-full bg-neon-500 px-5 py-3 font-semibold text-black transition hover:scale-[1.01] hover:bg-neon-400 disabled:cursor-not-allowed disabled:opacity-60"
+        className="secure-primary-button mt-6 w-full disabled:cursor-not-allowed disabled:opacity-60 disabled:hover:bg-neon-500"
       >
         {loading ? 'Please wait...' : isLogin ? 'Sign in' : 'Create account'}
       </button>

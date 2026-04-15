@@ -8,10 +8,19 @@ const loanController = require('../controllers/loanController');
 const router = express.Router();
 
 const loanValidation = [
-  body('income').isFloat({ gt: 0 }).withMessage('Income must be greater than 0'),
-  body('creditScore').isInt({ min: 300, max: 850 }).withMessage('Credit score must be between 300 and 850'),
-  body('loanAmount').isFloat({ gt: 0 }).withMessage('Loan amount must be greater than 0'),
-  body('employment').notEmpty().withMessage('Employment status is required'),
+  body('loanType').isIn(['personal', 'property']).withMessage('Loan type must be personal or property'),
+  body('income').isFloat({ gt: 0 }).withMessage('Income in INR must be greater than 0'),
+  body('creditScore').isInt({ min: 300, max: 900 }).withMessage('Credit score must be between 300 and 900'),
+  body('loanAmount').isFloat({ gt: 0 }).withMessage('Loan amount in INR must be greater than 0'),
+  body('existingDebt').isFloat({ min: 0 }).withMessage('Existing debt in INR must be 0 or greater'),
+  body('employmentStatus')
+    .if(body('loanType').equals('personal'))
+    .isIn(['stable', 'moderate', 'unstable'])
+    .withMessage('Employment status must be stable, moderate, or unstable for personal loans'),
+  body('propertyValue')
+    .if(body('loanType').equals('property'))
+    .isFloat({ gt: 0 })
+    .withMessage('Property value in INR must be greater than 0 for property loans'),
 ];
 
 router.post('/apply-loan', authMiddleware, loanValidation, validateRequest, loanController.applyLoan);

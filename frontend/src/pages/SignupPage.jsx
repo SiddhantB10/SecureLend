@@ -3,6 +3,8 @@ import { useNavigate } from 'react-router-dom';
 import AuthForm from '../components/AuthForm';
 import { useAuth } from '../context/AuthContext';
 
+const indianPhoneRegex = /^(?:\+91[-\s]?)?[6-9]\d{9}$/;
+
 const SignupPage = () => {
   const navigate = useNavigate();
   const { signup, loading } = useAuth();
@@ -19,7 +21,8 @@ const SignupPage = () => {
     if (values.name.trim().length < 2) nextErrors.name = 'Name must be at least 2 characters';
     if (!values.email.includes('@')) nextErrors.email = 'Enter a valid email address';
     if (values.password.length < 8) nextErrors.password = 'Password must be at least 8 characters';
-    if (values.phone.trim().length < 7) nextErrors.phone = 'Phone number is required';
+    if (!values.phone.trim()) nextErrors.phone = 'Phone number is required';
+    else if (!indianPhoneRegex.test(values.phone.trim())) nextErrors.phone = 'Enter a valid Indian phone number';
     return nextErrors;
   };
 
@@ -42,9 +45,9 @@ const SignupPage = () => {
       <div className="mx-auto grid min-h-[calc(100vh-6rem)] max-w-6xl place-items-center lg:grid-cols-2 lg:gap-12">
         <div className="hidden lg:block">
           <p className="text-xs uppercase tracking-[0.35em] text-neon-500/80">Join SecureLend</p>
-          <h1 className="mt-4 max-w-lg text-5xl font-semibold leading-tight">Create an account and start an intelligent loan application.</h1>
+          <h1 className="mt-4 max-w-lg text-5xl font-semibold leading-tight">Create your account and start your loan application online.</h1>
           <p className="mt-6 max-w-xl text-lg leading-8 text-white/60">
-            The system checks your application against an ML fraud model, stores the result securely, and gives you a transparent explanation.
+            Complete your profile once, apply in minutes, and track your application with transparent status updates.
           </p>
         </div>
         <div className="w-full max-w-md">

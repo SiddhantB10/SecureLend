@@ -19,6 +19,7 @@ import RiskMeter from '../components/RiskMeter';
 import SectionHeading from '../components/SectionHeading';
 import StatusBadge from '../components/StatusBadge';
 import StatCard from '../components/StatCard';
+import { formatIndianMonth, formatInr } from '../utils/formatters';
 
 const STATUS_COLORS = {
   low: '#10b981',
@@ -66,7 +67,7 @@ const AdminDashboard = () => {
   const monthlyStats = useMemo(() => {
     const buckets = new Map();
     loans.forEach((loan) => {
-      const bucket = new Date(loan.createdAt).toLocaleString('en-US', { month: 'short' });
+      const bucket = formatIndianMonth(loan.createdAt);
       buckets.set(bucket, (buckets.get(bucket) || 0) + 1);
     });
     return Array.from(buckets.entries()).map(([month, count]) => ({ month, count }));
@@ -80,7 +81,7 @@ const AdminDashboard = () => {
   return (
     <AppShell
       title="Admin dashboard"
-      subtitle="Review every application, trigger blockchain audit logging after decisions, and monitor risk distribution across the portfolio."
+      subtitle="Review loan applications, complete approvals and rejections, and monitor portfolio-level trends."
       actions={
         <button type="button" onClick={loadLoans} className="rounded-full bg-neon-500 px-4 py-2 text-sm font-semibold text-black">
           Refresh data
@@ -132,7 +133,7 @@ const AdminDashboard = () => {
         <SectionHeading
           eyebrow="Operations"
           title="Application review queue"
-          subtitle="Only medium-risk applications require manual action. Low-risk and high-risk cases are auto-decided by AI."
+          subtitle="Prioritize pending applications and complete manual decisions where required."
         />
 
         <div className="mt-6 space-y-4">
@@ -148,7 +149,7 @@ const AdminDashboard = () => {
                       <StatusBadge value={loan.status} />
                     </div>
                     <p className="mt-2 text-sm text-white/55">
-                      {loan.userId?.email || 'No email'} | Amount ${Number(loan.loanAmount).toLocaleString()} | Credit score {loan.creditScore}
+                      {loan.userId?.email || 'No email'} | Type {(loan.loanType || 'personal').toUpperCase()} | Amount {formatInr(loan.loanAmount)} | Credit score {loan.creditScore}
                     </p>
                     <p className="mt-1 text-xs text-white/45">Decision source: {loan.decisionSource === 'admin' ? 'Admin' : 'AI'}</p>
                     <p className="mt-2 text-xs text-white/40">{loan.explanation}</p>

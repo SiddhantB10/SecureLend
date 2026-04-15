@@ -21,8 +21,20 @@ from model_utils import EMPLOYMENT_OPTIONS, EMPLOYMENT_RISK, engineer_features
 BASE_DIR = Path(__file__).resolve().parents[1]
 MODEL_DIR = BASE_DIR / 'models'
 
-NUMERIC_COLUMNS = ['income', 'creditScore', 'loanAmount', 'debtToIncomeRatio', 'loanToIncomeRatio']
-CATEGORICAL_COLUMNS = ['employment']
+NUMERIC_COLUMNS = [
+    'income',
+    'creditScore',
+    'loanAmount',
+    'existingDebt',
+    'propertyValue',
+    'debtToIncomeRatio',
+    'loanToIncomeRatio',
+    'loanToValueRatio',
+    'creditRiskFactor',
+    'employmentRiskFactor',
+    'formulaScore',
+]
+CATEGORICAL_COLUMNS = ['loanType', 'employmentStatus']
 
 
 def generate_training_data(sample_count: int = 1500) -> pd.DataFrame:
@@ -30,27 +42,46 @@ def generate_training_data(sample_count: int = 1500) -> pd.DataFrame:
     rows = []
 
     for _ in range(sample_count):
-      income = float(rng.uniform(25000, 220000))
-      credit_score = float(rng.integers(300, 851))
-      loan_amount = float(rng.uniform(5000, min(income * 0.9, 120000)))
-      employment = rng.choice(EMPLOYMENT_OPTIONS, p=[0.55, 0.2, 0.15, 0.1])
-      engineered = engineer_features({
-          'income': income,
-          'creditScore': credit_score,
-          'loanAmount': loan_amount,
-          'employment': employment,
-      }).engineered
+        # India-centric annual income range in INR (approx 1.8L to 40L)
+        income = float(rng.uniform(180000, 4000000))
+        credit_score = float(rng.integers(300, 901))
+        # India-centric loan ticket sizes in INR (0.5L up to 25L, bounded by income ratio)
+        loan_amount = float(rng.uniform(50000, min(income * 1.2, 3000000)))
+        loan_type = rng.choice(['personal', 'property'], p=[0.58, 0.42])
+        employment = rng.choice(['stable', 'moderate', 'unstable'], p=[0.6, 0.28, 0.12])
+        existing_debt = float(rng.uniform(0, income * 0.95))
+        if loan_type == 'property':
+            property_low = max(loan_amount * 0.8, 300000)
+            property_high = max(property_low + 1, loan_amount * 2.4)
+            property_value = float(rng.uniform(property_low, property_high))
+        else:
+            property_value = 0.0
 
-      risk_signal = (
-          engineered['loanToIncomeRatio'] * 2.2
-          + engineered['debtToIncomeRatio'] * 1.5
-          + max(0.0, (700.0 - credit_score) / 300.0)
-          + EMPLOYMENT_RISK[employment] * 0.9
-          + rng.normal(0.0, 0.18)
-      )
-      probability = 1.0 / (1.0 + np.exp(-(risk_signal - 1.2)))
-      label = int(rng.random() < probability)
-      rows.append({**engineered, 'fraudLabel': label})
+        engineered = engineer_features({
+            'loanType': loan_type,
+            'income': income,
+            'creditScore': credit_score,
+            'loanAmount': loan_amount,
+            'existingDebt': existing_debt,
+            'propertyValue': property_value,
+            'employmentStatus': employment,
+        }).engineered
+
+        employment_risk = EMPLOYMENT_RISK[engineered['employmentStatus']] if engineered['loanType'] == 'personal' else 0.0
+        property_risk = engineered['loanToValueRatio'] * 1.6 if engineered['loanType'] == 'property' else 0.0
+
+        risk_signal = (
+            engineered['formulaScore'] * 2.1
+            + engineered['debtToIncomeRatio'] * 1.3
+            + engineered['loanToIncomeRatio'] * 0.6
+            + property_risk
+            + employment_risk * 0.9
+            + max(0.0, (680.0 - credit_score) / 320.0)
+            + rng.normal(0.0, 0.2)
+        )
+        probability = 1.0 / (1.0 + np.exp(-(risk_signal - 1.2)))
+        label = int(rng.random() < probability)
+        rows.append({**engineered, 'fraudLabel': label})
 
     return pd.DataFrame(rows)
 

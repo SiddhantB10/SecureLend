@@ -6,22 +6,22 @@ import { useAuth } from '../context/AuthContext';
 const features = [
   {
     icon: BrainCircuit,
-    title: 'AI underwriting',
-    text: 'Random Forest scoring plus explainable feature importance for every application.',
+    title: 'Smart eligibility checks',
+    text: 'Each application is assessed consistently using verified financial and profile inputs.',
   },
   {
     icon: Link2,
-    title: 'Blockchain audit trail',
-    text: 'Admin decisions are written to a local Ethereum chain for tamper-resistant records.',
+    title: 'Secure decision records',
+    text: 'Application outcomes are stored with traceable records for transparency and accountability.',
   },
   {
     icon: BarChart3,
-    title: 'Risk analytics',
-    text: 'See distribution charts, approval patterns, and application trends in one view.',
+    title: 'Application insights',
+    text: 'Track approvals, pending cases, and overall lending activity in one view.',
   },
   {
     icon: Sparkles,
-    title: 'Modern banking UX',
+    title: 'Designed for customers',
     text: 'A fast, responsive dark interface with subtle motion and premium data cards.',
   },
 ];
@@ -66,7 +66,7 @@ const LandingPage = () => {
               animate={{ opacity: 1, y: 0 }}
               className="inline-flex rounded-full border border-neon-500/20 bg-neon-500/10 px-4 py-2 text-xs font-semibold uppercase tracking-[0.35em] text-neon-500"
             >
-              AI + Blockchain fraud detection
+              India-focused digital lending
             </motion.p>
             <motion.h1
               initial={{ opacity: 0, y: 18 }}
@@ -74,7 +74,7 @@ const LandingPage = () => {
               transition={{ delay: 0.1 }}
               className="mt-6 max-w-3xl text-5xl font-semibold leading-tight sm:text-6xl"
             >
-              A premium loan risk platform built for speed, clarity, and auditability.
+              Apply for personal and property loans through a trusted digital experience.
             </motion.h1>
             <motion.p
               initial={{ opacity: 0, y: 18 }}
@@ -82,7 +82,7 @@ const LandingPage = () => {
               transition={{ delay: 0.2 }}
               className="mt-6 max-w-2xl text-lg leading-8 text-white/68"
             >
-              SecureLend scores each application with a trained ML model, stores the result in MongoDB, and writes the final decision to Ethereum after admin review.
+              Submit your details, track progress, and receive clear loan decisions with all values handled in INR.
             </motion.p>
             <motion.div
               initial={{ opacity: 0, y: 18 }}
@@ -116,7 +116,7 @@ const LandingPage = () => {
               <p className="text-xs uppercase tracking-[0.35em] text-white/45">Live signal</p>
               <div className="mt-4 flex items-end justify-between gap-4">
                 <div>
-                  <p className="text-sm text-white/55">Fraud risk score</p>
+                  <p className="text-sm text-white/55">Application score</p>
                   <div className="mt-2 text-5xl font-semibold text-neon-500">0.23</div>
                 </div>
                 <div className="rounded-full border border-emerald-500/30 bg-emerald-500/10 px-4 py-2 text-sm font-semibold text-emerald-400">
@@ -128,10 +128,10 @@ const LandingPage = () => {
               </div>
               <div className="mt-6 grid gap-3 sm:grid-cols-2">
                 {[
-                  ['Risk engine', 'Random Forest'],
-                  ['Audit layer', 'Ganache'],
-                  ['Explainability', 'Feature importance'],
-                  ['Auth', 'JWT + bcrypt'],
+                  ['Processing time', 'Fast turnaround'],
+                  ['Data security', 'Protected records'],
+                  ['Decision clarity', 'Clear status updates'],
+                  ['Access', 'Secure sign-in'],
                 ].map(([label, value]) => (
                   <div key={label} className="rounded-2xl border border-white/10 bg-white/5 p-4">
                     <p className="text-xs uppercase tracking-[0.25em] text-white/40">{label}</p>

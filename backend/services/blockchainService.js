@@ -1,8 +1,8 @@
 const { ethers } = require('ethers');
 
 const abi = [
-  'function storeLoan(uint256 loanId, uint256 riskScore, string decision) public',
-  'function getLoan(uint256 loanId) public view returns (uint256 loanId, uint256 riskScore, string decision, uint256 timestamp)',
+  'function storeLoan(uint256 loanId, string loanType, uint256 riskScore, string decision) public',
+  'function getLoan(uint256 loanId) public view returns (uint256 loanId, string loanType, uint256 riskScore, string decision, uint256 timestamp)',
 ];
 
 const toChainLoanId = (loanId) => {
@@ -29,13 +29,13 @@ const getContract = () => {
   return new ethers.Contract(process.env.BLOCKCHAIN_CONTRACT_ADDRESS, abi, wallet);
 };
 
-const recordLoanDecision = async ({ loanId, riskScore, decision }) => {
+const recordLoanDecision = async ({ loanId, loanType, riskScore, decision }) => {
   const contract = getContract();
   if (!contract) {
     return { blockchainEnabled: false, txHash: '' };
   }
 
-  const tx = await contract.storeLoan(toChainLoanId(loanId), toScaledRisk(riskScore), decision);
+  const tx = await contract.storeLoan(toChainLoanId(loanId), String(loanType || 'personal'), toScaledRisk(riskScore), decision);
   const receipt = await tx.wait();
 
   return {

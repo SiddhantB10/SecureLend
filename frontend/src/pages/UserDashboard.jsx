@@ -8,6 +8,7 @@ import SectionHeading from '../components/SectionHeading';
 import StatCard from '../components/StatCard';
 import StatusBadge from '../components/StatusBadge';
 import { useAuth } from '../context/AuthContext';
+import { formatInr } from '../utils/formatters';
 
 const UserDashboard = () => {
   const navigate = useNavigate();
@@ -36,7 +37,7 @@ const UserDashboard = () => {
   return (
     <AppShell
       title={`Welcome back, ${user?.name || 'member'}`}
-      subtitle="Monitor your loan applications, review AI explanations, and submit a new request when you're ready."
+      subtitle="Track your loan applications, review status updates, and submit a new request anytime."
       actions={
         <>
           <button
@@ -87,7 +88,7 @@ const UserDashboard = () => {
                       <StatusBadge value={loan.status} />
                     </div>
                     <p className="mt-2 text-sm text-white/55">
-                      Loan amount ${Number(loan.loanAmount).toLocaleString()} | Credit score {loan.creditScore} | Employment {loan.employment}
+                      Type {(loan.loanType || 'personal').toUpperCase()} | Loan amount {formatInr(loan.loanAmount)} | Credit score {loan.creditScore}
                     </p>
                   </div>
                   <div className="text-right">

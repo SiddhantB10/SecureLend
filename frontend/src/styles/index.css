@@ -51,4 +51,47 @@ button {
   .glass-panel {
     @apply rounded-3xl border border-white/10 bg-white/5 shadow-glow backdrop-blur;
   }
+
+  .secure-form-control {
+    @apply w-full rounded-2xl border border-white/10 bg-black/60 px-4 py-3 text-white outline-none transition duration-200 ease-out placeholder:text-white/30 focus:border-neon-500/60 focus:bg-black/70;
+  }
+
+  .secure-select {
+    @apply secure-form-control appearance-none pr-12 cursor-pointer;
+  }
+
+  .secure-date {
+    @apply secure-form-control cursor-pointer;
+  }
+
+  .secure-textarea {
+    @apply secure-form-control min-h-[120px] resize-none;
+  }
+
+  .secure-plain-button {
+    @apply inline-flex items-center justify-center rounded-full px-5 py-3 font-semibold transition duration-200 ease-out;
+  }
+
+  .secure-ghost-button {
+    @apply secure-plain-button border border-white/10 bg-white/5 text-white/80 hover:border-neon-500/40 hover:text-neon-500;
+  }
+
+  .secure-primary-button {
+    @apply secure-plain-button bg-neon-500 text-black hover:bg-neon-400;
+  }
+
+  .secure-form-control::-webkit-calendar-picker-indicator,
+  .secure-date::-webkit-calendar-picker-indicator {
+    cursor: pointer;
+    filter: invert(88%) sepia(67%) saturate(699%) hue-rotate(356deg) brightness(103%) contrast(100%);
+    opacity: 0.9;
+  }
+
+  .secure-form-control::-webkit-inner-spin-button,
+  .secure-form-control::-webkit-outer-spin-button,
+  .secure-date::-webkit-inner-spin-button,
+  .secure-date::-webkit-outer-spin-button {
+    margin: 0;
+    -webkit-appearance: none;
+  }
 }

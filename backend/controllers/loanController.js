@@ -1,12 +1,22 @@
 const Loan = require('../models/Loan');
 const { predictLoanRisk } = require('../services/mlService');
 const { recordLoanDecision } = require('../services/blockchainService');
+const { clampRiskScore, computeFormulaScore } = require('../services/riskScoringService');
+
+const parseNumber = (value, fallback = 0) => {
+  const parsed = Number(value);
+  return Number.isFinite(parsed) ? parsed : fallback;
+};
 
 const buildApplicantPayload = (body) => ({
-  income: Number(body.income),
-  creditScore: Number(body.creditScore),
-  loanAmount: Number(body.loanAmount),
-  employment: body.employment,
+  loanType: body.loanType,
+  income: parseNumber(body.income),
+  creditScore: parseNumber(body.creditScore),
+  loanAmount: parseNumber(body.loanAmount),
+  existingDebt: parseNumber(body.existingDebt),
+  propertyValue: parseNumber(body.propertyValue),
+  employment: body.employmentStatus || body.employment,
+  employmentStatus: body.employmentStatus || body.employment,
 });
 
 const determineCategory = (riskScore) => {
@@ -45,30 +55,81 @@ const determineAiDecision = (riskScore) => {
 exports.applyLoan = async (req, res) => {
   try {
     const applicantPayload = buildApplicantPayload(req.body);
-    const prediction = await predictLoanRisk(applicantPayload);
-    const category = prediction.category || determineCategory(prediction.riskScore);
-    const aiDecision = determineAiDecision(prediction.riskScore);
+    const formulaBundle = computeFormulaScore(applicantPayload);
+
+    const prediction = await predictLoanRisk({
+      ...applicantPayload,
+      loanType: formulaBundle.loanType,
+      employmentStatus: formulaBundle.employmentStatus,
+      formulaScore: formulaBundle.formulaScore,
+    });
+
+    const mlScore = clampRiskScore(Number(prediction.mlScore));
+    const formulaScore = clampRiskScore(formulaBundle.formulaScore);
+    const finalScore = clampRiskScore(0.6 * mlScore + 0.4 * formulaScore);
+    const category = determineCategory(finalScore);
+    const aiDecision = determineAiDecision(finalScore);
+
+    const mergedReasons = [...formulaBundle.explanationMarkers];
+    const normalizedExplanation = String(prediction.explanation || '').trim();
+    if (normalizedExplanation) {
+      mergedReasons.push(normalizedExplanation);
+    }
+
+    const explanation = mergedReasons.length
+      ? mergedReasons.join('. ')
+      : 'Risk is within acceptable policy thresholds for this loan profile.';
 
     const loan = await Loan.create({
       userId: req.user.id,
       ...applicantPayload,
+      loanType: formulaBundle.loanType,
+      employmentStatus: formulaBundle.employmentStatus,
       personalInfo: req.body.personalInfo || {},
       financialInfo: req.body.financialInfo || {},
       employmentInfo: req.body.employmentInfo || {},
       loanDetails: req.body.loanDetails || {},
-      riskScore: prediction.riskScore,
+      riskScore: finalScore,
+      mlRiskScore: mlScore,
+      formulaRiskScore: formulaScore,
       riskCategory: category,
-      explanation: prediction.explanation,
+      explanation,
       status: aiDecision.status,
       decisionSource: 'ai',
       aiModel: prediction.model || 'random_forest',
       adminNotes: aiDecision.reason,
     });
 
+    if (!loan.blockchainRecorded && loan.status !== 'review') {
+      try {
+        const chainResult = await recordLoanDecision({
+          loanId: loan._id.toString(),
+          loanType: loan.loanType,
+          riskScore: loan.riskScore,
+          decision: loan.status,
+        });
+        loan.blockchainRecorded = chainResult.blockchainEnabled;
+        loan.blockchainTxHash = chainResult.txHash;
+        await loan.save();
+      } catch (chainError) {
+        // Keep loan creation non-blocking if blockchain is unavailable.
+      }
+    }
+
+    const predictionResponse = {
+      ...prediction,
+      loanType: formulaBundle.loanType,
+      riskScore: Number(finalScore.toFixed(4)),
+      mlScore: Number(mlScore.toFixed(4)),
+      formulaScore: Number(formulaScore.toFixed(4)),
+      category,
+      explanation,
+    };
+
     return res.status(201).json({
       message: 'Loan application submitted successfully',
       loan,
-      prediction,
+      prediction: predictionResponse,
       decision: {
         source: 'ai',
         status: aiDecision.status,
@@ -144,6 +205,7 @@ exports.updateLoanStatus = async (req, res) => {
       try {
         const chainResult = await recordLoanDecision({
           loanId: loan._id.toString(),
+          loanType: loan.loanType,
           riskScore: loan.riskScore,
           decision: status,
         });

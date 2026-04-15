@@ -19,9 +19,29 @@ const loanSchema = new mongoose.Schema(
       type: Number,
       required: true,
     },
+    loanType: {
+      type: String,
+      enum: ['personal', 'property'],
+      default: 'personal',
+      required: true,
+    },
+    existingDebt: {
+      type: Number,
+      required: true,
+      default: 0,
+    },
+    propertyValue: {
+      type: Number,
+      default: 0,
+    },
     employment: {
       type: String,
-      required: true,
+      default: 'stable',
+    },
+    employmentStatus: {
+      type: String,
+      enum: ['stable', 'moderate', 'unstable'],
+      default: 'stable',
     },
     personalInfo: {
       type: Object,
@@ -40,6 +60,14 @@ const loanSchema = new mongoose.Schema(
       default: {},
     },
     riskScore: {
+      type: Number,
+      default: 0,
+    },
+    mlRiskScore: {
+      type: Number,
+      default: 0,
+    },
+    formulaRiskScore: {
       type: Number,
       default: 0,
     },

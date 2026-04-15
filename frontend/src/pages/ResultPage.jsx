@@ -4,6 +4,7 @@ import { ArrowLeft, FileText } from 'lucide-react';
 import AppShell from '../components/AppShell';
 import RiskMeter from '../components/RiskMeter';
 import SectionHeading from '../components/SectionHeading';
+import { formatInr } from '../utils/formatters';
 
 const ResultPage = () => {
   const location = useLocation();
@@ -17,9 +18,9 @@ const ResultPage = () => {
 
   if (!loan || !prediction) {
     return (
-      <AppShell title="Analysis result" subtitle="No loan result was found in the current session.">
+      <AppShell title="Application result" subtitle="No application result was found in the current session.">
         <div className="rounded-3xl border border-white/10 bg-white/5 p-8 shadow-glow">
-          <p className="text-white/60">Submit a loan application to see the AI-generated risk analysis here.</p>
+          <p className="text-white/60">Submit a loan application to view your assessment summary here.</p>
           <div className="mt-6 flex gap-3">
             <button
               type="button"
@@ -39,8 +40,8 @@ const ResultPage = () => {
 
   return (
     <AppShell
-      title="Risk analysis result"
-      subtitle="The model output below combines Random Forest probability, feature importance, and a textual explanation for the decision."
+      title="Assessment result"
+      subtitle="Review your application score, summary details, and current decision status."
       actions={
         <Link to="/dashboard" className="inline-flex items-center gap-2 rounded-full border border-white/10 px-4 py-2 text-sm text-white/75 hover:border-neon-500/40 hover:text-neon-500">
           <ArrowLeft className="h-4 w-4" />Back to dashboard
@@ -51,7 +52,7 @@ const ResultPage = () => {
         <RiskMeter score={prediction.riskScore} category={prediction.category} />
 
         <div className="rounded-3xl border border-white/10 bg-white/5 p-6 shadow-glow">
-          <SectionHeading eyebrow="Explainable AI" title="Why the model made this call" subtitle="The text below summarizes the risk drivers surfaced by the ML service." />
+          <SectionHeading eyebrow="Assessment notes" title="Decision summary" subtitle="The text below highlights the main factors considered in this application." />
           <div className="mt-6 rounded-2xl border border-white/10 bg-black/40 p-5 text-sm leading-7 text-white/70">
             {prediction.explanation}
           </div>
@@ -60,6 +61,18 @@ const ResultPage = () => {
               <div key={item.feature} className="rounded-2xl border border-white/10 bg-black/30 p-4">
                 <p className="text-xs uppercase tracking-[0.25em] text-white/45">{item.feature}</p>
                 <p className="mt-2 text-lg font-semibold text-neon-500">{item.importance}</p>
+              </div>
+            ))}
+          </div>
+          <div className="mt-5 grid gap-3 sm:grid-cols-3">
+            {[
+              ['Loan type', prediction.loanType || loan.loanType || 'personal'],
+              ['System score', prediction.mlScore ?? loan.mlRiskScore ?? 'N/A'],
+              ['Policy score', prediction.formulaScore ?? loan.formulaRiskScore ?? 'N/A'],
+            ].map(([label, value]) => (
+              <div key={label} className="rounded-2xl border border-white/10 bg-black/30 p-4">
+                <p className="text-xs uppercase tracking-[0.25em] text-white/45">{label}</p>
+                <p className="mt-2 text-lg font-semibold text-neon-500">{typeof value === 'number' ? value.toFixed(4) : value}</p>
               </div>
             ))}
           </div>
@@ -74,11 +87,12 @@ const ResultPage = () => {
         <div className="mt-5 grid gap-4 md:grid-cols-2 xl:grid-cols-4">
           {[
             ['Applicant', loan.personalInfo?.name || 'N/A'],
-            ['Income', `$${Number(loan.income).toLocaleString()}`],
+            ['Income', formatInr(loan.income)],
             ['Credit score', loan.creditScore],
-            ['Loan amount', `$${Number(loan.loanAmount).toLocaleString()}`],
+            ['Loan amount', formatInr(loan.loanAmount)],
+            ['Loan type', loan.loanType || prediction.loanType || 'personal'],
             ['Decision', `${loan.status?.toUpperCase()} (${loan.decisionSource === 'admin' ? 'Admin' : 'AI'})`],
-            ['AI model', loan.aiModel || 'random_forest'],
+            ['Assessment engine', loan.aiModel || 'random_forest'],
           ].map(([label, value]) => (
             <div key={label} className="rounded-2xl border border-white/10 bg-black/30 p-4">
               <p className="text-xs uppercase tracking-[0.25em] text-white/40">{label}</p>
