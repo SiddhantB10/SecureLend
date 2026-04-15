@@ -36,7 +36,10 @@ const SignupPage = () => {
       const response = await signup(values);
       navigate(response.user.role === 'admin' ? '/admin' : '/dashboard');
     } catch (error) {
-      setErrors({ form: error.response?.data?.message || 'Unable to create account' });
+      const apiPayload = error.response?.data;
+      const firstValidationMessage = apiPayload?.errors?.[0]?.message;
+      const detailedReason = firstValidationMessage || apiPayload?.message;
+      setErrors({ form: detailedReason || 'Unable to create account' });
     }
   };
 

@@ -22,6 +22,33 @@ const sanitizeUser = (user) => ({
   role: user.role,
 });
 
+const mapSignupError = (error) => {
+  if (!error) {
+    return { status: 500, message: 'Failed to create account' };
+  }
+
+  if (error.code === 11000) {
+    return { status: 409, message: 'An account with this email already exists' };
+  }
+
+  if (error.name === 'ValidationError') {
+    const firstFieldError = Object.values(error.errors || {})[0];
+    return {
+      status: 400,
+      message: firstFieldError?.message || 'Invalid signup details',
+    };
+  }
+
+  if (error.name === 'MongoServerSelectionError') {
+    return {
+      status: 503,
+      message: 'Database connection failed. Please try again in a moment.',
+    };
+  }
+
+  return { status: 500, message: error.message || 'Failed to create account' };
+};
+
 exports.signup = async (req, res) => {
   try {
     const { name, email, password, phone } = req.body;
@@ -48,7 +75,8 @@ exports.signup = async (req, res) => {
       user: sanitizeUser(user),
     });
   } catch (error) {
-    return res.status(500).json({ message: 'Failed to create account', error: error.message });
+    const mapped = mapSignupError(error);
+    return res.status(mapped.status).json({ message: mapped.message });
   }
 };
 

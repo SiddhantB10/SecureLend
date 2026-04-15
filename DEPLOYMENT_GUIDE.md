@@ -118,7 +118,7 @@ mongodb+srv://ATLAS_USER:ATLAS_PASSWORD@CLUSTER_HOST/securelend?retryWrites=true
 - Build Command:
 
 ```bash
-pip install -r requirements.txt && python training/train_model.py
+pip install -r requirements.txt
 ```
 
 - Start Command:
@@ -128,6 +128,11 @@ uvicorn app:app --host 0.0.0.0 --port $PORT
 ```
 
 - Health Check Path: `/health`
+
+Why this is faster:
+
+- Model files are already present in `ml-service/models/`, so retraining during each Render deploy is unnecessary.
+- Training in build step can cause long builds or timeouts on free-tier instances.
 
 ### C2. Set env vars
 
@@ -179,7 +184,7 @@ Use this complete set in Render Environment:
 ```env
 NODE_ENV=production
 MONGODB_URI=mongodb+srv://ATLAS_USER:ATLAS_PASSWORD@CLUSTER_HOST/securelend?retryWrites=true&w=majority
-JWT_SECRET=CHANGE_THIS_TO_A_LONG_RANDOM_SECRET
+JWT_SECRET=Seclend37grp
 JWT_EXPIRES_IN=7d
 ML_SERVICE_URL=https://YOUR_ML_RENDER_URL
 CORS_ORIGINS=https://YOUR_FRONTEND_VERCEL_URL
