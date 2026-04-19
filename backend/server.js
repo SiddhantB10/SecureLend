@@ -12,7 +12,9 @@ const startServer = async () => {
     });
   } catch (error) {
     console.error('Failed to start server:', error.message);
-    process.exit(1);
+    app.listen(PORT, () => {
+      console.log(`SecureLend backend running on port ${PORT} without database connection`);
+    });
   }
 };
 

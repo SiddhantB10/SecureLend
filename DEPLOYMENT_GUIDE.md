@@ -1,4 +1,4 @@
-# SecureLend Deployment Guide (Vercel + Render + Atlas + Sepolia)
+# SecureLend Deployment Guide (Vercel + Render + Atlas + Hedera)
 
 This guide is written for beginners and is designed so you can deploy end-to-end with free-tier services.
 
@@ -8,7 +8,7 @@ This guide is written for beginners and is designed so you can deploy end-to-end
 - Backend API: Render Web Service (Node)
 - ML API: Render Web Service (Python/FastAPI)
 - Database: MongoDB Atlas (M0 free cluster)
-- Blockchain: Ethereum Sepolia testnet
+- Blockchain: Hedera testnet
 
 ## 1) Important Free-Tier Reality Check
 
@@ -16,7 +16,7 @@ You asked for 100% free.
 
 - Vercel Hobby: free
 - MongoDB Atlas M0: free
-- Sepolia: free testnet (gas via faucet)
+- Hedera testnet: free testnet for development
 - Render: usually has free options, but availability can vary by account/region/policy updates.
 
 If your Render account does not show free web services, this architecture cannot stay 100% free on Render specifically. In that case, keep all config from this guide and switch only hosting provider for backend/ML.
@@ -29,8 +29,8 @@ Create these accounts first:
 - Vercel
 - Render
 - MongoDB Atlas
-- Infura or Alchemy (Sepolia RPC)
-- MetaMask wallet (for Sepolia deploy wallet)
+- Hedera portal account
+- Hedera testnet wallet credentials
 
 ## 3) Recommended Region Setup For India
 
@@ -43,7 +43,7 @@ For lower latency in India:
 
 ## 4) Deployment Order (Do In This Exact Sequence)
 
-1. Deploy smart contract to Sepolia
+1. Deploy smart contract to Hedera
 2. Create MongoDB Atlas cluster
 3. Deploy ML API on Render
 4. Deploy Backend on Render
@@ -51,12 +51,11 @@ For lower latency in India:
 6. Seed admin user on backend
 7. Smoke-test full flow
 
-## 5) Step A: Deploy Smart Contract To Sepolia
+## 5) Step A: Deploy Smart Contract To Hedera
 
 ### A1. Prepare wallet and funds
 
-- Create/import wallet in MetaMask.
-- Get Sepolia ETH from faucet.
+- Create a Hedera testnet account or reuse your paired credentials.
 - Keep private key secure (never commit).
 
 ### A2. Configure contract env
@@ -64,8 +63,10 @@ For lower latency in India:
 Create `blockchain/.env` with this exact shape:
 
 ```env
-SEPOLIA_RPC_URL=https://sepolia.infura.io/v3/YOUR_INFURA_PROJECT_ID
-PRIVATE_KEY=0xYOUR_64_HEX_PRIVATE_KEY
+HEDERA_ACCOUNT_ID=0.0.YOUR_ACCOUNT_ID
+HEDERA_PRIVATE_KEY=YOUR_PRIVATE_KEY_HEX
+HEDERA_NETWORK=testnet
+HEDERA_CONTRACT_ID=
 ```
 
 ### A3. Deploy
@@ -75,11 +76,10 @@ Run from project root:
 ```powershell
 cd blockchain
 npm install
-npm run compile
-npm run deploy:sepolia
+npm run deploy
 ```
 
-Copy the output contract address. You will need it later as `BLOCKCHAIN_CONTRACT_ADDRESS`.
+Copy the output contract ID. You will need it later as `HEDERA_CONTRACT_ID`.
 
 ## 6) Step B: Create MongoDB Atlas (Free)
 
@@ -188,9 +188,10 @@ JWT_SECRET=seclend37grp
 JWT_EXPIRES_IN=7d
 ML_SERVICE_URL=https://YOUR_ML_RENDER_URL
 CORS_ORIGINS=https://YOUR_FRONTEND_VERCEL_URL
-BLOCKCHAIN_RPC_URL=https://sepolia.infura.io/v3/YOUR_INFURA_PROJECT_ID
-BLOCKCHAIN_CONTRACT_ADDRESS=0xYOUR_DEPLOYED_SEPOLIA_CONTRACT
-BLOCKCHAIN_PRIVATE_KEY=0xYOUR_64_HEX_PRIVATE_KEY
+HEDERA_NETWORK=testnet
+HEDERA_ACCOUNT_ID=0.0.YOUR_ACCOUNT_ID
+HEDERA_PRIVATE_KEY=YOUR_PRIVATE_KEY_HEX
+HEDERA_CONTRACT_ID=0.0.YOUR_DEPLOYED_CONTRACT
 ADMIN_NAME=SecureLend Admin
 ADMIN_EMAIL=admin@securelend.com
 ADMIN_PASSWORD=CHANGE_THIS_STRONG_PASSWORD
@@ -253,8 +254,9 @@ Use this map to confirm linkage:
 - Frontend (`VITE_API_URL`) -> Backend Render URL
 - Backend (`ML_SERVICE_URL`) -> ML Render URL
 - Backend (`MONGODB_URI`) -> Atlas cluster
-- Backend (`BLOCKCHAIN_RPC_URL`) -> Sepolia RPC endpoint
-- Backend (`BLOCKCHAIN_CONTRACT_ADDRESS`) -> your deployed contract
+- Backend (`HEDERA_ACCOUNT_ID`) -> Hedera account
+- Backend (`HEDERA_PRIVATE_KEY`) -> Hedera private key
+- Backend (`HEDERA_CONTRACT_ID`) -> your deployed contract
 - ML (`CORS_ORIGINS`) -> Backend Render URL
 - Backend (`CORS_ORIGINS`) -> Frontend Vercel URL
 
@@ -307,15 +309,15 @@ Fix:
 Fix:
 
 - Private key must be 64 hex chars (with or without `0x`).
-- Use funded Sepolia wallet key only.
+- Use a valid Hedera testnet account/key pair only.
 
 ### Error: Contract write fails from backend
 
 Fix:
 
-- Verify `BLOCKCHAIN_CONTRACT_ADDRESS` is from Sepolia deployment.
-- Verify `BLOCKCHAIN_RPC_URL` is Sepolia endpoint.
-- Wallet in `BLOCKCHAIN_PRIVATE_KEY` has Sepolia ETH.
+- Verify `HEDERA_CONTRACT_ID` matches the deployed contract.
+- Verify `HEDERA_ACCOUNT_ID` and `HEDERA_PRIVATE_KEY` are a matched pair.
+- Use the Hedera testnet network.
 
 ## 14) India Smoothness Tips
 
@@ -329,7 +331,7 @@ Fix:
 - Rotate all secrets after testing.
 - Never commit `.env` files.
 - Use strong `JWT_SECRET`.
-- Use dedicated wallet with small Sepolia balance only.
+- Use a dedicated Hedera test account for deployments.
 - Keep Atlas user permissions limited to required database.
 
 ## 16) Exact Env Templates (Copy/Paste)
@@ -343,9 +345,10 @@ JWT_SECRET=CHANGE_THIS_TO_A_LONG_RANDOM_SECRET
 JWT_EXPIRES_IN=7d
 ML_SERVICE_URL=https://YOUR_ML_RENDER_URL
 CORS_ORIGINS=https://YOUR_FRONTEND_VERCEL_URL
-BLOCKCHAIN_RPC_URL=https://sepolia.infura.io/v3/YOUR_INFURA_PROJECT_ID
-BLOCKCHAIN_CONTRACT_ADDRESS=0xYOUR_DEPLOYED_SEPOLIA_CONTRACT
-BLOCKCHAIN_PRIVATE_KEY=0xYOUR_64_HEX_PRIVATE_KEY
+HEDERA_NETWORK=testnet
+HEDERA_ACCOUNT_ID=0.0.YOUR_ACCOUNT_ID
+HEDERA_PRIVATE_KEY=YOUR_PRIVATE_KEY_HEX
+HEDERA_CONTRACT_ID=0.0.YOUR_DEPLOYED_CONTRACT
 ADMIN_NAME=SecureLend Admin
 ADMIN_EMAIL=admin@securelend.com
 ADMIN_PASSWORD=CHANGE_THIS_STRONG_PASSWORD
@@ -367,8 +370,10 @@ VITE_API_URL=https://YOUR_BACKEND_RENDER_URL
 ### 16.4 blockchain/.env (local deploy machine)
 
 ```env
-SEPOLIA_RPC_URL=https://sepolia.infura.io/v3/YOUR_INFURA_PROJECT_ID
-PRIVATE_KEY=0xYOUR_64_HEX_PRIVATE_KEY
+HEDERA_ACCOUNT_ID=0.0.YOUR_ACCOUNT_ID
+HEDERA_PRIVATE_KEY=YOUR_PRIVATE_KEY_HEX
+HEDERA_NETWORK=testnet
+HEDERA_CONTRACT_ID=
 ```
 
 ## 17) Final Go-Live Verification URLs

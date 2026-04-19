@@ -3,13 +3,11 @@
   "version": "1.0.0",
   "private": true,
   "scripts": {
-    "compile": "hardhat compile",
-    "deploy:ganache": "hardhat run scripts/deploy.js --network ganache",
-    "deploy:sepolia": "hardhat run scripts/deploy.js --network sepolia"
+    "deploy": "node scripts/deploy.js",
+    "check-key": "node scripts/checkKey.js"
   },
-  "devDependencies": {
-    "@nomicfoundation/hardhat-toolbox": "^6.1.0",
-    "dotenv": "^16.6.1",
-    "hardhat": "^2.24.1"
+  "dependencies": {
+    "@hashgraph/sdk": "^2.45.0",
+    "dotenv": "^16.6.1"
   }
 }

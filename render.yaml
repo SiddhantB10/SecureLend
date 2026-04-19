@@ -19,11 +19,13 @@ services:
         sync: false
       - key: CORS_ORIGINS
         sync: false
-      - key: BLOCKCHAIN_RPC_URL
+      - key: HEDERA_NETWORK
+        value: testnet
+      - key: HEDERA_ACCOUNT_ID
         sync: false
-      - key: BLOCKCHAIN_CONTRACT_ADDRESS
+      - key: HEDERA_PRIVATE_KEY
         sync: false
-      - key: BLOCKCHAIN_PRIVATE_KEY
+      - key: HEDERA_CONTRACT_ID
         sync: false
       - key: ADMIN_NAME
         value: SecureLend Admin

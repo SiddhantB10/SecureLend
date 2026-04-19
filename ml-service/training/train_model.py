@@ -12,9 +12,10 @@ from sklearn.linear_model import LogisticRegression
 from sklearn.pipeline import Pipeline
 from sklearn.preprocessing import OneHotEncoder, StandardScaler
 
-PROJECT_ROOT = Path(__file__).resolve().parents[1]
-if str(PROJECT_ROOT) not in sys.path:
-    sys.path.insert(0, str(PROJECT_ROOT))
+# Add parent directory to path for imports
+_current_dir = Path(__file__).resolve().parent
+_parent_dir = _current_dir.parent
+sys.path.insert(0, str(_parent_dir))
 
 from model_utils import EMPLOYMENT_OPTIONS, EMPLOYMENT_RISK, engineer_features
 

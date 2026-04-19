@@ -5,7 +5,7 @@ SecureLend is a full-stack AI-powered lending risk platform with:
 - Backend API on Render (Node + Express)
 - ML API on Render (FastAPI)
 - Database on MongoDB Atlas
-- Blockchain writes on Ethereum Sepolia
+- Blockchain writes on Hedera testnet
 
 This repository is now configured to deploy with that exact architecture.
 
@@ -20,7 +20,7 @@ For a complete beginner-friendly, copy-paste deployment playbook (including exac
 - Frontend: `frontend/` -> Vercel
 - Backend API: `backend/` -> Render Web Service
 - ML API: `ml-service/` -> Render Web Service
-- Smart contract: `blockchain/` -> deployed to Sepolia
+- Smart contract: `blockchain/` -> deployed to Hedera testnet
 - DB: MongoDB Atlas cluster
 
 ## 1) Deploy MongoDB Atlas
@@ -35,20 +35,20 @@ Example:
 MONGODB_URI=mongodb+srv://<username>:<password>@<cluster-url>/securelend?retryWrites=true&w=majority
 ```
 
-## 2) Deploy Smart Contract to Sepolia
+## 2) Deploy Smart Contract to Hedera
 
 1. Create `blockchain/.env` from `blockchain/.env.example`.
-2. Set `SEPOLIA_RPC_URL` and `PRIVATE_KEY`.
+2. Set `HEDERA_ACCOUNT_ID` and `HEDERA_PRIVATE_KEY`.
 3. Deploy:
 
 ```bash
 cd blockchain
 npm install
 npm run compile
-npm run deploy:sepolia
+npm run deploy
 ```
 
-4. Save deployed contract address and use it as `BLOCKCHAIN_CONTRACT_ADDRESS` in backend env vars.
+4. Save the deployed `HEDERA_CONTRACT_ID` and use it in backend env vars.
 
 ## 3) Deploy ML API on Render
 
@@ -88,9 +88,10 @@ JWT_SECRET=<strong-random-secret>
 JWT_EXPIRES_IN=7d
 ML_SERVICE_URL=https://your-ml-service.onrender.com
 CORS_ORIGINS=https://your-frontend.vercel.app
-BLOCKCHAIN_RPC_URL=https://sepolia.infura.io/v3/<project-id>
-BLOCKCHAIN_CONTRACT_ADDRESS=0xYourSepoliaContractAddress
-BLOCKCHAIN_PRIVATE_KEY=0xYourSepoliaWalletPrivateKey
+HEDERA_NETWORK=testnet
+HEDERA_ACCOUNT_ID=0.0.<account-id>
+HEDERA_PRIVATE_KEY=<hedera-private-key>
+HEDERA_CONTRACT_ID=0.0.<contract-id>
 ADMIN_NAME=SecureLend Admin
 ADMIN_EMAIL=admin@securelend.com
 ADMIN_PASSWORD=<strong-admin-password>
@@ -125,9 +126,9 @@ VITE_API_URL=https://your-backend.onrender.com
 
 - `render.yaml` contains both Render services (backend + ML API).
 - `frontend/vercel.json` configures SPA rewrites.
-- `backend/.env.example` is aligned to Atlas + Sepolia + Render.
+- `backend/.env.example` is aligned to Atlas + Hedera + Render.
 - `ml-service/.env.example` includes explicit CORS setup.
-- `blockchain/.env.example` is aligned to Sepolia.
+- `blockchain/.env.example` is aligned to Hedera.
 
 ## 7) Health Checks
 
