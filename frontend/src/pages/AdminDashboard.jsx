@@ -153,6 +153,9 @@ const AdminDashboard = () => {
                     </p>
                     <p className="mt-1 text-xs text-white/45">Decision source: {loan.decisionSource === 'admin' ? 'Admin' : 'AI'}</p>
                     <p className="mt-2 text-xs text-white/40">{loan.explanation}</p>
+                    <p className="mt-2 text-xs text-white/40">
+                      Blockchain tx id: <span className="text-white/65">{loan.blockchainTxHash || 'Not recorded yet'}</span>
+                    </p>
                   </div>
                   <div className="lg:max-w-[260px]">
                     <RiskMeter score={loan.riskScore} category={loan.riskCategory} />

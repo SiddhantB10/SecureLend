@@ -9,7 +9,18 @@ const seedAdmin = async () => {
   const adminPassword = process.env.ADMIN_PASSWORD || 'Admin@1234';
   const adminPhone = process.env.ADMIN_PHONE || '+10000000000';
 
-  await connectDatabase();
+  // Require a real configured MongoDB for seeding to avoid creating the admin
+  // in the ephemeral in-memory fallback. Set DISABLE_DB_FALLBACK=true to fail
+  // fast when the configured DB is unreachable.
+  process.env.DISABLE_DB_FALLBACK = 'true';
+  try {
+    await connectDatabase();
+  } catch (err) {
+    console.error('Aborting admin seed: unable to connect to configured MongoDB.');
+    console.error('Check your MONGODB_URI and network connectivity.');
+    console.error('Error:', err.message);
+    process.exit(1);
+  }
 
   const passwordHash = await bcrypt.hash(adminPassword, 12);
   await User.findOneAndUpdate(

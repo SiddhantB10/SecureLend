@@ -74,7 +74,7 @@ exports.applyLoan = async (req, res) => {
       prediction = {
         mlScore: formulaBundle.formulaScore,
         model: 'formula_fallback',
-        explanation: 'ML service is unavailable, so formula-based risk scoring was used.',
+        explanation: 'ML service prediction failed or timed out, so formula-based risk scoring was used.',
       };
     }
 

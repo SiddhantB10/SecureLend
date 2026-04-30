@@ -38,11 +38,12 @@ async function main() {
   }
 
   // Create client
-  const client = Client.forTestnet();
+  const client = NETWORK === 'mainnet' ? Client.forMainnet() : Client.forTestnet();
   client.setOperator(ACCOUNT_ID, privateKey);
 
   console.log('🔗 Deploying to Hedera Testnet...');
   console.log('📍 Account ID:', ACCOUNT_ID);
+  console.log('🌐 Network:', NETWORK);
 
   try {
     // Read compiled contract bytecode from the Hardhat artifact

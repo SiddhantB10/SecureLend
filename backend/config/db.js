@@ -19,7 +19,17 @@ const connectDatabase = async () => {
     console.log('MongoDB connected');
     return true;
   } catch (error) {
-    console.warn('MongoDB Atlas connection failed, starting local fallback:', error.message);
+    console.warn('MongoDB Atlas connection failed:', error.message);
+
+    // If the caller explicitly requests no in-memory fallback, rethrow so
+    // seeding or critical operations don't accidentally write to ephemeral DB.
+    if (process.env.DISABLE_DB_FALLBACK === 'true') {
+      throw new Error(
+        `Failed to connect to configured MongoDB and in-memory fallback is disabled: ${error.message}`
+      );
+    }
+
+    console.warn('Starting local in-memory fallback MongoDB');
 
     try {
       if (!memoryServer) {

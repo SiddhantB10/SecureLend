@@ -4,6 +4,7 @@ const helmet = require('helmet');
 const morgan = require('morgan');
 const authRoutes = require('./routes/authRoutes');
 const loanRoutes = require('./routes/loanRoutes');
+const adminRoutes = require('./routes/adminRoutes');
 
 const app = express();
 
@@ -16,6 +17,14 @@ const parseAllowedOrigins = () => {
 };
 
 const allowedOrigins = parseAllowedOrigins();
+
+// In development, allow the local frontend dev server so CORS won't block local testing.
+if (process.env.NODE_ENV !== 'production') {
+  const devOrigins = ['http://localhost:5173', 'http://127.0.0.1:5173'];
+  devOrigins.forEach((o) => {
+    if (!allowedOrigins.includes(o)) allowedOrigins.push(o);
+  });
+}
 
 const corsOptions = {
   origin(origin, callback) {
@@ -44,6 +53,7 @@ app.get('/health', (req, res) => {
 
 app.use(authRoutes);
 app.use(loanRoutes);
+app.use(adminRoutes);
 
 app.use((req, res) => {
   res.status(404).json({ message: 'Route not found' });

@@ -93,6 +93,7 @@ const ResultPage = () => {
             ['Loan type', loan.loanType || prediction.loanType || 'personal'],
             ['Decision', `${loan.status?.toUpperCase()} (${loan.decisionSource === 'admin' ? 'Admin' : 'AI'})`],
             ['Assessment engine', loan.aiModel || 'random_forest'],
+            ['Blockchain tx id', loan.blockchainTxHash || 'Not recorded yet'],
           ].map(([label, value]) => (
             <div key={label} className="rounded-2xl border border-white/10 bg-black/30 p-4">
               <p className="text-xs uppercase tracking-[0.25em] text-white/40">{label}</p>

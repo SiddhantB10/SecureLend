@@ -41,9 +41,9 @@ class PredictionRequest(BaseModel):
     model_config = ConfigDict(extra='ignore')
 
     loanType: str = Field(default='personal')
-    income: float = Field(gt=0)
-    creditScore: float = Field(ge=300, le=900)
-    loanAmount: float = Field(gt=0)
+    income: float = Field(ge=0)
+    creditScore: float = Field(ge=0)
+    loanAmount: float = Field(ge=0)
     existingDebt: float = Field(ge=0)
     propertyValue: float | None = Field(default=None, ge=0)
     employmentStatus: str | None = Field(default='stable')

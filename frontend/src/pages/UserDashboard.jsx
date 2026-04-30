@@ -90,6 +90,9 @@ const UserDashboard = () => {
                     <p className="mt-2 text-sm text-white/55">
                       Type {(loan.loanType || 'personal').toUpperCase()} | Loan amount {formatInr(loan.loanAmount)} | Credit score {loan.creditScore}
                     </p>
+                    <p className="mt-1 text-xs text-white/40">
+                      Blockchain tx id: <span className="text-white/65">{loan.blockchainTxHash || 'Not recorded yet'}</span>
+                    </p>
                   </div>
                   <div className="text-right">
                     <p className="text-xs uppercase tracking-[0.25em] text-white/45">Risk score</p>
