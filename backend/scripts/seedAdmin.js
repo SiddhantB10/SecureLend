@@ -1,13 +1,22 @@
-require('dotenv').config();
+require('dotenv').config({ path: require('path').join(__dirname, '..', '.env') });
 const bcrypt = require('bcryptjs');
 const connectDatabase = require('../config/db');
 const User = require('../models/User');
+const AdminAccount = require('../database/models/admin/AdminAccount');
+
+const requireEnv = (key) => {
+  const value = String(process.env[key] || '').trim();
+  if (!value) {
+    throw new Error(`${key} is required for admin seeding`);
+  }
+  return value;
+};
 
 const seedAdmin = async () => {
-  const adminName = process.env.ADMIN_NAME || 'SecureLend Admin';
-  const adminEmail = process.env.ADMIN_EMAIL || 'admin@securelend.com';
-  const adminPassword = process.env.ADMIN_PASSWORD || 'Admin@1234';
-  const adminPhone = process.env.ADMIN_PHONE || '+10000000000';
+  const adminName = requireEnv('ADMIN_NAME');
+  const adminEmail = requireEnv('ADMIN_EMAIL').toLowerCase();
+  const adminPassword = requireEnv('ADMIN_PASSWORD');
+  const adminPhone = requireEnv('ADMIN_PHONE');
 
   // Require a real configured MongoDB for seeding to avoid creating the admin
   // in the ephemeral in-memory fallback. Set DISABLE_DB_FALLBACK=true to fail
@@ -23,7 +32,7 @@ const seedAdmin = async () => {
   }
 
   const passwordHash = await bcrypt.hash(adminPassword, 12);
-  await User.findOneAndUpdate(
+  await AdminAccount.findOneAndUpdate(
     { email: adminEmail.toLowerCase() },
     {
       name: adminName,
@@ -31,9 +40,14 @@ const seedAdmin = async () => {
       password: passwordHash,
       phone: adminPhone,
       role: 'admin',
+      designation: 'Platform Administrator',
+      active: true,
+      permissions: ['loan:review', 'loan:approve', 'loan:reject', 'admin:manage'],
     },
     { upsert: true, new: true }
   );
+
+  await User.deleteOne({ email: adminEmail.toLowerCase() });
 
   console.log(`Admin account ready: ${adminEmail}`);
   process.exit(0);

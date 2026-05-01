@@ -19,12 +19,12 @@ const AuthForm = ({
       initial={{ opacity: 0, y: 18 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.45 }}
-      className="rounded-3xl border border-white/10 bg-white/5 p-8 shadow-glow backdrop-blur"
+      className="rounded-3xl border border-gray-200 bg-gray-50 p-8 shadow-glow backdrop-blur"
     >
       <div className="mb-6">
         <p className="text-xs uppercase tracking-[0.35em] text-neon-500/80">Secure access</p>
-        <h1 className="mt-3 text-3xl font-semibold text-white">{isLogin ? 'Welcome back' : 'Create your account'}</h1>
-        <p className="mt-2 text-sm text-white/60">
+        <h1 className="mt-3 text-3xl font-semibold text-gray-900">{isLogin ? 'Welcome back' : 'Create your account'}</h1>
+        <p className="mt-2 text-sm text-gray-600">
           {isLogin
             ? 'Sign in to review your loan applications and monitoring status.'
             : 'Create your account to apply for loans and manage your application journey in INR.'}
@@ -33,7 +33,7 @@ const AuthForm = ({
 
       <div className="space-y-4">
         {!isLogin ? (
-          <label className="block space-y-2 text-sm text-white/80">
+          <label className="block space-y-2 text-sm text-gray-900">
             <span className="flex items-center gap-2 font-medium"><UserRound className="h-4 w-4 text-neon-500" />Full name</span>
             <input
               type="text"
@@ -41,13 +41,13 @@ const AuthForm = ({
               value={values.name}
               onChange={onChange}
               className={controlClass}
-              placeholder="Aarav Sharma"
+              placeholder="Full legal name"
             />
             {errors.name ? <span className="text-xs text-red-400">{errors.name}</span> : null}
           </label>
         ) : null}
 
-        <label className="block space-y-2 text-sm text-white/80">
+        <label className="block space-y-2 text-sm text-gray-900">
           <span className="flex items-center gap-2 font-medium"><Mail className="h-4 w-4 text-neon-500" />Email</span>
           <input
             type="email"
@@ -55,12 +55,12 @@ const AuthForm = ({
             value={values.email}
             onChange={onChange}
             className={controlClass}
-            placeholder="you@securelend.com"
+            placeholder="name@example.com"
           />
           {errors.email ? <span className="text-xs text-red-400">{errors.email}</span> : null}
         </label>
 
-        <label className="block space-y-2 text-sm text-white/80">
+        <label className="block space-y-2 text-sm text-gray-900">
           <span className="flex items-center gap-2 font-medium"><LockKeyhole className="h-4 w-4 text-neon-500" />Password</span>
           <input
             type="password"
@@ -68,13 +68,13 @@ const AuthForm = ({
             value={values.password}
             onChange={onChange}
             className={controlClass}
-            placeholder="At least 8 characters"
+            placeholder="Create a secure password"
           />
           {errors.password ? <span className="text-xs text-red-400">{errors.password}</span> : null}
         </label>
 
         {!isLogin ? (
-          <label className="block space-y-2 text-sm text-white/80">
+          <label className="block space-y-2 text-sm text-gray-900">
             <span className="flex items-center gap-2 font-medium"><Phone className="h-4 w-4 text-neon-500" />Phone</span>
             <input
               type="tel"
@@ -82,7 +82,7 @@ const AuthForm = ({
               value={values.phone}
               onChange={onChange}
               className={controlClass}
-              placeholder="+91 98XXXXXXXX"
+              placeholder="10-digit Indian phone number"
             />
             {errors.phone ? <span className="text-xs text-red-400">{errors.phone}</span> : null}
           </label>

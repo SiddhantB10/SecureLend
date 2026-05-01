@@ -33,6 +33,8 @@ Example:
 
 ```env
 MONGODB_URI=mongodb+srv://<username>:<password>@<cluster-url>/securelend?retryWrites=true&w=majority
+# Optional for networks that block SRV DNS queries:
+MONGODB_URI_FALLBACK=mongodb://<username>:<password>@<host1>:27017,<host2>:27017,<host3>:27017/securelend?replicaSet=<replica-set>&authSource=admin&retryWrites=true&w=majority
 ```
 
 ## 2) Deploy Smart Contract to Hedera
@@ -92,10 +94,10 @@ HEDERA_NETWORK=testnet
 HEDERA_ACCOUNT_ID=0.0.<account-id>
 HEDERA_PRIVATE_KEY=<hedera-private-key>
 HEDERA_CONTRACT_ID=0.0.<contract-id>
-ADMIN_NAME=SecureLend Admin
-ADMIN_EMAIL=admin@securelend.com
+ADMIN_NAME=<admin-name>
+ADMIN_EMAIL=<admin-email>
 ADMIN_PASSWORD=<strong-admin-password>
-ADMIN_PHONE=+10000000000
+ADMIN_PHONE=<admin-phone>
 ```
 
 After first successful backend deploy, run admin seed once:
@@ -129,6 +131,7 @@ VITE_API_URL=https://your-backend.onrender.com
 - `backend/.env.example` is aligned to Atlas + Hedera + Render.
 - `ml-service/.env.example` includes explicit CORS setup.
 - `blockchain/.env.example` is aligned to Hedera.
+- Admin accounts now live in the dedicated `admins` collection, while borrowers stay in `users`.
 
 ## 7) Health Checks
 

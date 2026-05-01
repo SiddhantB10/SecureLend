@@ -36,12 +36,12 @@ const LoginPage = () => {
   };
 
   return (
-    <div className="min-h-screen bg-secure-950 px-4 py-12 text-white sm:px-6 lg:px-8">
+    <div className="min-h-screen bg-white px-4 py-12 text-gray-900 sm:px-6 lg:px-8">
       <div className="mx-auto grid min-h-[calc(100vh-6rem)] max-w-6xl place-items-center lg:grid-cols-2 lg:gap-12">
         <div className="hidden lg:block">
           <p className="text-xs uppercase tracking-[0.35em] text-neon-500/80">SecureLend</p>
-          <h1 className="mt-4 max-w-lg text-5xl font-semibold leading-tight">Sign in to manage your loan applications with confidence.</h1>
-          <p className="mt-6 max-w-xl text-lg leading-8 text-white/60">
+          <h1 className="mt-4 max-w-lg text-5xl font-semibold leading-tight text-gray-900">Sign in to manage your loan applications with confidence.</h1>
+          <p className="mt-6 max-w-xl text-lg leading-8 text-gray-600">
             Review status updates, check application details, and stay informed throughout each lending decision.
           </p>
         </div>

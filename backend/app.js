@@ -20,7 +20,7 @@ const allowedOrigins = parseAllowedOrigins();
 
 // In development, allow the local frontend dev server so CORS won't block local testing.
 if (process.env.NODE_ENV !== 'production') {
-  const devOrigins = ['http://localhost:5173', 'http://127.0.0.1:5173'];
+  const devOrigins = ['http://localhost:5173', 'http://127.0.0.1:5173', 'http://localhost:4173', 'http://127.0.0.1:4173'];
   devOrigins.forEach((o) => {
     if (!allowedOrigins.includes(o)) allowedOrigins.push(o);
   });
@@ -46,6 +46,13 @@ app.set('trust proxy', 1);
 app.use(helmet());
 app.use(express.json({ limit: '2mb' }));
 app.use(morgan('dev'));
+
+app.get('/', (req, res) => {
+  res.json({
+    message: 'SecureLend backend is running',
+    health: '/health',
+  });
+});
 
 app.get('/health', (req, res) => {
   res.json({ status: 'ok', service: 'securelend-backend' });

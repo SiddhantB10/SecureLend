@@ -134,24 +134,24 @@ const LoanApplicationPage = () => {
       subtitle="Choose your loan type, provide your details in INR, and submit your application for review."
       actions={
         <div className="inline-flex items-center gap-2 rounded-full border border-neon-500/30 bg-neon-500/10 px-4 py-2 text-sm text-neon-500">
-          <ShieldCheck className="h-4 w-4" />{user?.role === 'admin' ? 'Admin preview mode' : 'User application'}
-        </div>
+            <ShieldCheck className="h-4 w-4" />{user?.role === 'admin' ? 'Admin workspace' : 'User application'}
+          </div>
       }
     >
-      <div className="mb-6 rounded-3xl border border-white/10 bg-white/5 p-5 shadow-glow">
-        <div className="flex items-center justify-between text-sm text-white/60">
+      <div className="mb-6 rounded-3xl border border-gray-200 bg-gray-50 p-5 shadow-glow">
+        <div className="flex items-center justify-between text-sm text-gray-600">
           <span>Application completion</span>
           <span>{progress}%</span>
         </div>
-        <div className="mt-3 h-2 overflow-hidden rounded-full bg-white/10">
+        <div className="mt-3 h-2 overflow-hidden rounded-full bg-gray-200">
           <div className="h-full rounded-full bg-neon-500 transition-all" style={{ width: `${progress}%` }} />
         </div>
       </div>
 
       <form onSubmit={handleSubmit} className="space-y-8">
-        {errors.form ? <div className="rounded-2xl border border-red-500/30 bg-red-500/10 px-4 py-3 text-sm text-red-300">{errors.form}</div> : null}
+        {errors.form ? <div className="rounded-2xl border border-red-500/30 bg-red-500/10 px-4 py-3 text-sm text-red-600">{errors.form}</div> : null}
 
-        <section className="rounded-3xl border border-white/10 bg-white/5 p-6 shadow-glow">
+        <section className="rounded-3xl border border-gray-200 bg-gray-50 p-6 shadow-glow">
           <SectionHeading
             eyebrow="Loan selection"
             title="Pick loan type"
@@ -178,7 +178,7 @@ const LoanApplicationPage = () => {
           </div>
         </section>
 
-        <section className="rounded-3xl border border-white/10 bg-white/5 p-6 shadow-glow">
+        <section className="rounded-3xl border border-gray-200 bg-gray-50 p-6 shadow-glow">
           <SectionHeading eyebrow="Section 1" title="Personal info" subtitle="Identify the applicant and contact details." />
           <div className="mt-6 grid gap-4 md:grid-cols-2">
             <FormField label="Full name" error={errors.name}>
@@ -196,7 +196,7 @@ const LoanApplicationPage = () => {
           </div>
         </section>
 
-        <section className="rounded-3xl border border-white/10 bg-white/5 p-6 shadow-glow">
+        <section className="rounded-3xl border border-gray-200 bg-gray-50 p-6 shadow-glow">
           <SectionHeading eyebrow="Section 2" title="Financial info" subtitle="Provide your current income, liabilities, and repayment-related details." />
           <div className="mt-6 grid gap-4 md:grid-cols-2">
             <FormField label="Annual income (INR)" error={errors.income} hint="Gross annual income in Indian Rupees">
@@ -217,7 +217,7 @@ const LoanApplicationPage = () => {
           </div>
         </section>
 
-        <section className="rounded-3xl border border-white/10 bg-white/5 p-6 shadow-glow">
+        <section className="rounded-3xl border border-gray-200 bg-gray-50 p-6 shadow-glow">
           <SectionHeading eyebrow="Section 3" title="Employment" subtitle="Share your work details to support profile verification and loan assessment." />
           <div className="mt-6 grid gap-4 md:grid-cols-3">
             {values.loanType === 'personal' ? (
@@ -235,7 +235,7 @@ const LoanApplicationPage = () => {
                 />
               </FormField>
             ) : (
-              <div className="rounded-2xl border border-white/10 bg-black/40 px-4 py-3 text-sm text-white/60 md:col-span-3">
+              <div className="rounded-2xl border border-gray-300 bg-gray-100 px-4 py-3 text-sm text-gray-600 md:col-span-3">
                 Employment status is optional for property-backed applications.
               </div>
             )}
@@ -251,7 +251,7 @@ const LoanApplicationPage = () => {
           </div>
         </section>
 
-        <section className="rounded-3xl border border-white/10 bg-white/5 p-6 shadow-glow">
+        <section className="rounded-3xl border border-gray-200 bg-gray-50 p-6 shadow-glow">
           <SectionHeading eyebrow="Section 4" title="Loan details" subtitle="Define the requested loan amount in INR and purpose." />
           <div className="mt-6 grid gap-4 md:grid-cols-2">
             <FormField label="Loan amount (INR)" error={errors.loanAmount}>
@@ -274,7 +274,7 @@ const LoanApplicationPage = () => {
             whileTap={{ scale: 0.98 }}
             type="submit"
             disabled={submitting}
-            className="inline-flex items-center gap-2 rounded-full bg-neon-500 px-6 py-3 font-semibold text-black transition hover:bg-neon-400 disabled:cursor-not-allowed disabled:opacity-60"
+            className="inline-flex items-center gap-2 rounded-full bg-neon-500 px-6 py-3 font-semibold text-white transition hover:bg-neon-400 disabled:cursor-not-allowed disabled:opacity-60"
           >
             {submitting ? 'Submitting...' : 'Submit application'} <ArrowRight className="h-4 w-4" />
           </motion.button>

@@ -83,7 +83,7 @@ const AdminDashboard = () => {
       title="Admin dashboard"
       subtitle="Review loan applications, complete approvals and rejections, and monitor portfolio-level trends."
       actions={
-        <button type="button" onClick={loadLoans} className="rounded-full bg-neon-500 px-4 py-2 text-sm font-semibold text-black">
+        <button type="button" onClick={loadLoans} className="rounded-full bg-neon-500 px-4 py-2 text-sm font-semibold text-white">
           Refresh data
         </button>
       }
@@ -96,7 +96,7 @@ const AdminDashboard = () => {
       </div>
 
       <div className="mt-8 grid gap-6 xl:grid-cols-2">
-        <div className="rounded-3xl border border-white/10 bg-white/5 p-6 shadow-glow">
+        <div className="rounded-3xl border border-gray-200 bg-gray-50 p-6 shadow-glow">
           <SectionHeading eyebrow="Analytics" title="Risk distribution" subtitle="Pie chart of predicted risk categories across all applications." />
           <div className="mt-6 h-72">
             <ResponsiveContainer width="100%" height="100%">
@@ -113,23 +113,23 @@ const AdminDashboard = () => {
           </div>
         </div>
 
-        <div className="rounded-3xl border border-white/10 bg-white/5 p-6 shadow-glow">
+        <div className="rounded-3xl border border-gray-200 bg-gray-50 p-6 shadow-glow">
           <SectionHeading eyebrow="Analytics" title="Application volume" subtitle="How many applications were captured each month." />
           <div className="mt-6 h-72">
             <ResponsiveContainer width="100%" height="100%">
               <BarChart data={monthlyStats}>
-                <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.08)" />
-                <XAxis dataKey="month" stroke="rgba(255,255,255,0.6)" />
-                <YAxis stroke="rgba(255,255,255,0.6)" />
+                <CartesianGrid strokeDasharray="3 3" stroke="rgba(0,0,0,0.08)" />
+                <XAxis dataKey="month" stroke="rgba(0,0,0,0.6)" />
+                <YAxis stroke="rgba(0,0,0,0.6)" />
                 <Tooltip />
-                <Bar dataKey="count" fill="#f8e71c" radius={[12, 12, 0, 0]} />
+                <Bar dataKey="count" fill="#0066cc" radius={[12, 12, 0, 0]} />
               </BarChart>
             </ResponsiveContainer>
           </div>
         </div>
       </div>
 
-      <div className="mt-8 rounded-3xl border border-white/10 bg-white/5 p-6 shadow-glow">
+      <div className="mt-8 rounded-3xl border border-gray-200 bg-gray-50 p-6 shadow-glow">
         <SectionHeading
           eyebrow="Operations"
           title="Application review queue"
@@ -138,23 +138,23 @@ const AdminDashboard = () => {
 
         <div className="mt-6 space-y-4">
           {loading ? (
-            <div className="rounded-2xl border border-white/10 bg-black/30 p-6 text-white/55">Loading applications...</div>
+            <div className="rounded-2xl border border-gray-200 bg-gray-100 p-6 text-gray-600">Loading applications...</div>
           ) : loans.length ? (
             loans.map((loan) => (
-              <motion.div key={loan._id} initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="rounded-2xl border border-white/10 bg-black/35 p-5">
+              <motion.div key={loan._id} initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="rounded-2xl border border-gray-200 bg-white p-5">
                 <div className="grid gap-5 lg:grid-cols-[1.1fr_0.6fr_0.8fr] lg:items-center">
                   <div>
                     <div className="flex flex-wrap items-center gap-3">
-                      <h3 className="text-lg font-semibold text-white">{loan.userId?.name || 'Unknown applicant'}</h3>
+                      <h3 className="text-lg font-semibold text-gray-900">{loan.userId?.name || 'Unknown applicant'}</h3>
                       <StatusBadge value={loan.status} />
                     </div>
-                    <p className="mt-2 text-sm text-white/55">
+                    <p className="mt-2 text-sm text-gray-600">
                       {loan.userId?.email || 'No email'} | Type {(loan.loanType || 'personal').toUpperCase()} | Amount {formatInr(loan.loanAmount)} | Credit score {loan.creditScore}
                     </p>
-                    <p className="mt-1 text-xs text-white/45">Decision source: {loan.decisionSource === 'admin' ? 'Admin' : 'AI'}</p>
-                    <p className="mt-2 text-xs text-white/40">{loan.explanation}</p>
-                    <p className="mt-2 text-xs text-white/40">
-                      Blockchain tx id: <span className="text-white/65">{loan.blockchainTxHash || 'Not recorded yet'}</span>
+                    <p className="mt-1 text-xs text-gray-500">Decision source: {loan.decisionSource === 'admin' ? 'Admin' : 'AI'}</p>
+                    <p className="mt-2 text-xs text-gray-600">{loan.explanation}</p>
+                    <p className="mt-2 text-xs text-gray-500">
+                      Blockchain tx id: <span className="text-gray-700">{loan.blockchainTxHash || 'Not recorded yet'}</span>
                     </p>
                   </div>
                   <div className="lg:max-w-[260px]">
@@ -163,15 +163,15 @@ const AdminDashboard = () => {
                   <div className="flex flex-wrap gap-2 lg:justify-end">
                     {loan.status === 'review' || loan.status === 'pending' ? (
                       <>
-                        <button onClick={() => updateStatus(loan._id, 'approved')} className="rounded-full border border-emerald-500/30 bg-emerald-500/10 px-4 py-2 text-sm font-semibold text-emerald-400">
+                        <button onClick={() => updateStatus(loan._id, 'approved')} className="rounded-full border border-emerald-500/30 bg-emerald-500/10 px-4 py-2 text-sm font-semibold text-emerald-600">
                           Approve
                         </button>
-                        <button onClick={() => updateStatus(loan._id, 'rejected')} className="rounded-full border border-red-500/30 bg-red-500/10 px-4 py-2 text-sm font-semibold text-red-400">
+                        <button onClick={() => updateStatus(loan._id, 'rejected')} className="rounded-full border border-red-500/30 bg-red-500/10 px-4 py-2 text-sm font-semibold text-red-600">
                           Reject
                         </button>
                       </>
                     ) : (
-                      <span className="rounded-full border border-white/10 bg-white/5 px-4 py-2 text-xs font-semibold text-white/55">
+                      <span className="rounded-full border border-gray-300 bg-gray-100 px-4 py-2 text-xs font-semibold text-gray-500">
                         No manual action required
                       </span>
                     )}
@@ -180,7 +180,7 @@ const AdminDashboard = () => {
               </motion.div>
             ))
           ) : (
-            <div className="rounded-2xl border border-white/10 bg-black/30 p-6 text-white/55">No loan applications are available.</div>
+            <div className="rounded-2xl border border-gray-200 bg-gray-100 p-6 text-gray-600">No loan applications are available.</div>
           )}
         </div>
       </div>

@@ -27,8 +27,8 @@ https://portal.hedera.com
 
 ## 📝 Example of Correct Pair:
 ```
-HEDERA_ACCOUNT_ID=0.0.1234567
-HEDERA_PRIVATE_KEY=0xabcd1234efgh5678...
+HEDERA_ACCOUNT_ID=0.0.YOUR_ACCOUNT_ID
+HEDERA_PRIVATE_KEY=YOUR_PRIVATE_KEY
 ```
 
 ## 🚀 Update Your Configuration
@@ -37,16 +37,16 @@ Once you have the correct pair:
 
 1. Open `blockchain/.env`:
 ```env
-HEDERA_ACCOUNT_ID=0.0.XXXXX         # Replace with your generated ID
-HEDERA_PRIVATE_KEY=0xYOUR_PRIVATE_KEY  # Replace with your generated key
+HEDERA_ACCOUNT_ID=0.0.YOUR_ACCOUNT_ID
+HEDERA_PRIVATE_KEY=YOUR_PRIVATE_KEY
 HEDERA_NETWORK=testnet
 HEDERA_CONTRACT_ID=
 ```
 
 2. Open `backend/.env`:
 ```env
-HEDERA_ACCOUNT_ID=0.0.XXXXX
-HEDERA_PRIVATE_KEY=0xYOUR_PRIVATE_KEY
+HEDERA_ACCOUNT_ID=0.0.YOUR_ACCOUNT_ID
+HEDERA_PRIVATE_KEY=YOUR_PRIVATE_KEY
 HEDERA_NETWORK=testnet
 HEDERA_CONTRACT_ID=
 ```
@@ -58,9 +58,9 @@ npm run deploy
 ```
 
 ## 🔗 Current Status
-- Account ID: `0.0.8665542`
-- Private Key: ✅ Valid format but ❌ Doesn't match the account
-- Solution: Get new Account ID from Hedera Portal
+- Account ID: use the account you generated in Hedera Portal
+- Private Key: must match the account it was generated with
+- Solution: copy both values from the same Hedera Portal account page
 
 ## 💡 How to Verify Credentials Work
 After updating .env with new credentials, run:

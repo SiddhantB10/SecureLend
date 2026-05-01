@@ -30,18 +30,18 @@ Your SecureLend project is now running on **Hedera Hashgraph** - 100% FREE block
 
 #### A. Update `blockchain/.env`:
 ```env
-HEDERA_ACCOUNT_ID=0.0.XXXXX          # From Hedera Portal
-HEDERA_PRIVATE_KEY=YOUR_PRIVATE_KEY  # From Hedera Portal
+HEDERA_ACCOUNT_ID=0.0.YOUR_ACCOUNT_ID
+HEDERA_PRIVATE_KEY=YOUR_PRIVATE_KEY
 HEDERA_NETWORK=testnet
-HEDERA_CONTRACT_ID=                  # Will be filled after deployment
+HEDERA_CONTRACT_ID=
 ```
 
 #### B. Update `backend/.env`:
 ```env
-HEDERA_ACCOUNT_ID=0.0.XXXXX          # Same as above
-HEDERA_PRIVATE_KEY=YOUR_PRIVATE_KEY  # Same as above
+HEDERA_ACCOUNT_ID=0.0.YOUR_ACCOUNT_ID
+HEDERA_PRIVATE_KEY=YOUR_PRIVATE_KEY
 HEDERA_NETWORK=testnet
-HEDERA_CONTRACT_ID=                  # Will be filled after deployment
+HEDERA_CONTRACT_ID=
 ```
 
 ### Step 3: Install Dependencies

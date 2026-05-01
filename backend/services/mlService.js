@@ -1,6 +1,7 @@
 const axios = require('axios');
 
-const LOCAL_ML_URL = 'http://127.0.0.1:8000';
+// The ML service in this workspace runs on port 8001 by default (uvicorn start).
+const LOCAL_ML_URL = 'http://127.0.0.1:8001';
 
 const getCandidateBaseUrls = () => {
   const configured = String(process.env.ML_SERVICE_URL || '').trim();
@@ -9,9 +10,9 @@ const getCandidateBaseUrls = () => {
     return [LOCAL_ML_URL];
   }
 
-  // In local development, try configured URL first, then local ML service as fallback.
+  // In local development, try the local ML service first, then the configured URL as fallback.
   if (configured !== LOCAL_ML_URL && process.env.NODE_ENV !== 'production') {
-    return [configured, LOCAL_ML_URL];
+    return [LOCAL_ML_URL, configured];
   }
 
   return [configured];

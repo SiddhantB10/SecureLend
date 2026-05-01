@@ -1,8 +1,8 @@
 const styles = {
-  pending: 'border-white/10 bg-white/5 text-white/70',
+  pending: 'border-gray-300 bg-gray-100 text-gray-600',
   review: 'border-neon-500/30 bg-neon-500/10 text-neon-500',
-  approved: 'border-emerald-500/30 bg-emerald-500/10 text-emerald-400',
-  rejected: 'border-red-500/30 bg-red-500/10 text-red-400',
+  approved: 'border-emerald-500/30 bg-emerald-500/10 text-emerald-600',
+  rejected: 'border-red-500/30 bg-red-500/10 text-red-600',
 };
 
 const labels = {

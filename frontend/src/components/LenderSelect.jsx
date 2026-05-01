@@ -43,7 +43,7 @@ const LenderSelect = ({ name, value, options, onChange, placeholder = 'Select an
         aria-expanded={open}
         className="secure-select flex w-full items-center justify-between text-left"
       >
-        <span className={selectedOption ? 'text-white' : 'text-white/35'}>{selectedOption?.label || placeholder}</span>
+        <span className={selectedOption ? 'text-gray-900' : 'text-gray-400'}>{selectedOption?.label || placeholder}</span>
         <ChevronDown className={`h-4 w-4 shrink-0 text-neon-500 transition-transform duration-200 ${open ? 'rotate-180' : ''}`} />
       </button>
 
@@ -53,7 +53,7 @@ const LenderSelect = ({ name, value, options, onChange, placeholder = 'Select an
           animate={{ opacity: 1, y: 0, scale: 1 }}
           exit={{ opacity: 0, y: 8, scale: 0.98 }}
           transition={{ duration: 0.15 }}
-          className="absolute z-50 mt-3 w-full overflow-hidden rounded-3xl border border-white/10 bg-[#171717] shadow-[0_24px_80px_rgba(0,0,0,0.55)]"
+          className="absolute z-50 mt-3 w-full overflow-hidden rounded-3xl border border-gray-200 bg-white shadow-[0_24px_80px_rgba(0,0,0,0.12)]"
           role="listbox"
         >
           <div className="max-h-64 overflow-auto p-2">
@@ -66,7 +66,7 @@ const LenderSelect = ({ name, value, options, onChange, placeholder = 'Select an
                   role="option"
                   aria-selected={active}
                   onClick={() => handleSelect(option.value)}
-                  className={`flex w-full items-center justify-between rounded-2xl px-4 py-3 text-left text-sm transition ${active ? 'bg-neon-500/15 text-neon-500' : 'text-white/80 hover:bg-white/5 hover:text-white'}`}
+                  className={`flex w-full items-center justify-between rounded-2xl px-4 py-3 text-left text-sm transition ${active ? 'bg-neon-500/15 text-neon-500' : 'text-gray-700 hover:bg-gray-100 hover:text-gray-900'}`}
                 >
                   <span>{option.label}</span>
                   {active ? <span className="text-xs uppercase tracking-[0.25em] text-neon-500">Selected</span> : null}

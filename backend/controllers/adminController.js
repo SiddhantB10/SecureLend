@@ -1,5 +1,14 @@
 const bcrypt = require('bcryptjs');
+const AdminAccount = require('../database/models/admin/AdminAccount');
 const User = require('../models/User');
+
+const requireEnv = (key) => {
+  const value = String(process.env[key] || '').trim();
+  if (!value) {
+    throw new Error(`${key} is required`);
+  }
+  return value;
+};
 
 exports.setupAdmin = async (req, res) => {
   const secret = req.headers['x-admin-setup-secret'] || req.get('x-admin-setup-secret');
@@ -13,13 +22,13 @@ exports.setupAdmin = async (req, res) => {
   }
 
   try {
-    const adminName = process.env.ADMIN_NAME || 'SecureLend Admin';
-    const adminEmail = (process.env.ADMIN_EMAIL || 'admin@securelend.com').toLowerCase();
-    const adminPassword = process.env.ADMIN_PASSWORD || 'Admin@1234';
-    const adminPhone = process.env.ADMIN_PHONE || '+10000000000';
+    const adminName = requireEnv('ADMIN_NAME');
+    const adminEmail = requireEnv('ADMIN_EMAIL').toLowerCase();
+    const adminPassword = requireEnv('ADMIN_PASSWORD');
+    const adminPhone = requireEnv('ADMIN_PHONE');
 
     const passwordHash = await bcrypt.hash(adminPassword, 12);
-    const user = await User.findOneAndUpdate(
+    const admin = await AdminAccount.findOneAndUpdate(
       { email: adminEmail },
       {
         name: adminName,
@@ -27,11 +36,16 @@ exports.setupAdmin = async (req, res) => {
         password: passwordHash,
         phone: adminPhone,
         role: 'admin',
+        designation: 'Platform Administrator',
+        active: true,
+        permissions: ['loan:review', 'loan:approve', 'loan:reject', 'admin:manage'],
       },
       { upsert: true, new: true }
     );
 
-    return res.json({ message: 'Admin account created/updated', email: user.email });
+    await User.deleteOne({ email: adminEmail });
+
+    return res.json({ message: 'Admin account created/updated', email: admin.email });
   } catch (error) {
     console.error('Admin setup failed:', error.message);
     return res.status(500).json({ message: 'Failed to create admin', error: error.message });

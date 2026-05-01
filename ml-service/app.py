@@ -64,6 +64,11 @@ rf_pipeline = None
 logreg_pipeline = None
 
 
+@app.get('/')
+def root() -> dict[str, str]:
+    return {'message': 'SecureLend ML service is running', 'health': '/health', 'predict': '/predict'}
+
+
 def load_models() -> tuple[object, object]:
     global rf_pipeline, logreg_pipeline
 

@@ -107,6 +107,12 @@ Use this exact format:
 mongodb+srv://ATLAS_USER:ATLAS_PASSWORD@CLUSTER_HOST/securelend?retryWrites=true&w=majority
 ```
 
+If your runtime/network blocks DNS SRV lookups (`querySrv ECONNREFUSED`), also set:
+
+```env
+MONGODB_URI_FALLBACK=mongodb://ATLAS_USER:ATLAS_PASSWORD@HOST1:27017,HOST2:27017,HOST3:27017/securelend?replicaSet=REPLICA_SET_NAME&authSource=admin&retryWrites=true&w=majority
+```
+
 ## 7) Step C: Deploy ML API On Render
 
 ### C1. Create service
@@ -192,10 +198,10 @@ HEDERA_NETWORK=testnet
 HEDERA_ACCOUNT_ID=0.0.YOUR_ACCOUNT_ID
 HEDERA_PRIVATE_KEY=YOUR_PRIVATE_KEY_HEX
 HEDERA_CONTRACT_ID=0.0.YOUR_DEPLOYED_CONTRACT
-ADMIN_NAME=SecureLend Admin
-ADMIN_EMAIL=admin@securelend.com
+ADMIN_NAME=YOUR_ADMIN_NAME
+ADMIN_EMAIL=YOUR_ADMIN_EMAIL
 ADMIN_PASSWORD=CHANGE_THIS_STRONG_PASSWORD
-ADMIN_PHONE=+919999999999
+ADMIN_PHONE=YOUR_ADMIN_PHONE
 ```
 
 Notes:
@@ -254,6 +260,7 @@ Use this map to confirm linkage:
 - Frontend (`VITE_API_URL`) -> Backend Render URL
 - Backend (`ML_SERVICE_URL`) -> ML Render URL
 - Backend (`MONGODB_URI`) -> Atlas cluster
+- Admin login data -> `admins` collection
 - Backend (`HEDERA_ACCOUNT_ID`) -> Hedera account
 - Backend (`HEDERA_PRIVATE_KEY`) -> Hedera private key
 - Backend (`HEDERA_CONTRACT_ID`) -> your deployed contract

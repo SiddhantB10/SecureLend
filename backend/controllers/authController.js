@@ -1,6 +1,7 @@
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
 const User = require('../models/User');
+const AdminAccount = require('../database/models/admin/AdminAccount');
 
 const buildToken = (user) =>
   jwt.sign(
@@ -84,22 +85,26 @@ exports.login = async (req, res) => {
   try {
     const { email, password } = req.body;
 
-    const user = await User.findOne({ email: email.toLowerCase() });
-    if (!user) {
+    const normalizedEmail = email.toLowerCase();
+    const admin = await AdminAccount.findOne({ email: normalizedEmail });
+    const user = admin ? null : await User.findOne({ email: normalizedEmail });
+    const account = admin || user;
+
+    if (!account) {
       return res.status(401).json({ message: 'Invalid email or password' });
     }
 
-    const passwordMatches = await bcrypt.compare(password, user.password);
+    const passwordMatches = await bcrypt.compare(password, account.password);
     if (!passwordMatches) {
       return res.status(401).json({ message: 'Invalid email or password' });
     }
 
-    const token = buildToken(user);
+    const token = buildToken(account);
 
     return res.json({
       message: 'Login successful',
       token,
-      user: sanitizeUser(user),
+      user: sanitizeUser(account),
     });
   } catch (error) {
     return res.status(500).json({ message: 'Failed to log in', error: error.message });
