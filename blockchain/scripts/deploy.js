@@ -66,7 +66,8 @@ async function main() {
     console.log('\n📤 Uploading contract bytecode...');
     const fileCreateTx = new FileCreateTransaction()
       .setKeys([privateKey.publicKey])
-      .setContents(contractBytecode);
+      .setContents(contractBytecode)
+      .setMaxTransactionFee(new Hbar(10));
 
     const fileCreateSubmitTx = await fileCreateTx.execute(client);
     const fileCreateRx = await fileCreateSubmitTx.getReceipt(client);
@@ -79,6 +80,7 @@ async function main() {
     const contractCreateTx = new ContractCreateTransaction()
       .setBytecodeFileId(bytecodeFileId)
       .setGas(1500000)
+      .setMaxTransactionFee(new Hbar(40))
       .setConstructorParameters(new ContractFunctionParameters());
 
     const contractCreateSubmitTx = await contractCreateTx.execute(client);

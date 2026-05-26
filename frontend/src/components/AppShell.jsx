@@ -10,6 +10,7 @@ const AppShell = ({ title, subtitle, children, actions }) => {
   const { user, logout } = useAuth();
   const onApplicationPage = location.pathname.startsWith('/apply');
   const onDashboardPage = location.pathname.startsWith('/dashboard');
+  const onAdminPage = location.pathname.startsWith('/admin');
 
   const handleLogout = () => {
     logout();
@@ -27,29 +28,39 @@ const AppShell = ({ title, subtitle, children, actions }) => {
               SecureLend
             </Link>
             <nav className="hidden items-center gap-6 md:flex">
-              {onDashboardPage ? (
-                <span className="inline-flex items-center gap-2 text-sm text-neon-500">
-                  <LayoutDashboard className="h-4 w-4" />Dashboard
-                </span>
-              ) : (
-                <Link className="text-sm text-gray-700 transition hover:text-neon-500" to="/dashboard">
-                  <span className="inline-flex items-center gap-2"><LayoutDashboard className="h-4 w-4" />Dashboard</span>
-                </Link>
+              {user?.role !== 'admin' && (
+                onDashboardPage ? (
+                  <span className="inline-flex items-center gap-2 text-sm text-neon-500">
+                    <LayoutDashboard className="h-4 w-4" />Dashboard
+                  </span>
+                ) : (
+                  <Link className="text-sm text-gray-700 transition hover:text-neon-500" to="/dashboard">
+                    <span className="inline-flex items-center gap-2"><LayoutDashboard className="h-4 w-4" />Dashboard</span>
+                  </Link>
+                )
               )}
-              {onApplicationPage ? (
-                <span className="inline-flex items-center gap-2 text-sm text-neon-500">
-                  <BanknoteArrowUp className="h-4 w-4" />Apply Loan
-                </span>
-              ) : (
-                <Link className="text-sm text-gray-700 transition hover:text-neon-500" to="/apply">
-                  <span className="inline-flex items-center gap-2"><BanknoteArrowUp className="h-4 w-4" />Apply Loan</span>
-                </Link>
+              {user?.role !== 'admin' && (
+                onApplicationPage ? (
+                  <span className="inline-flex items-center gap-2 text-sm text-neon-500">
+                    <BanknoteArrowUp className="h-4 w-4" />Apply Loan
+                  </span>
+                ) : (
+                  <Link className="text-sm text-gray-700 transition hover:text-neon-500" to="/apply">
+                    <span className="inline-flex items-center gap-2"><BanknoteArrowUp className="h-4 w-4" />Apply Loan</span>
+                  </Link>
+                )
               )}
-              {user?.role === 'admin' ? (
-                <Link className="text-sm text-gray-700 transition hover:text-neon-500" to="/admin">
-                  <span className="inline-flex items-center gap-2"><ShieldAlert className="h-4 w-4" />Admin</span>
-                </Link>
-              ) : null}
+              {user?.role === 'admin' && (
+                onAdminPage ? (
+                  <span className="inline-flex items-center gap-2 text-sm text-neon-500">
+                    <ShieldAlert className="h-4 w-4" />Admin Dashboard
+                  </span>
+                ) : (
+                  <Link className="text-sm text-gray-700 transition hover:text-neon-500" to="/admin">
+                    <span className="inline-flex items-center gap-2"><ShieldAlert className="h-4 w-4" />Admin Dashboard</span>
+                  </Link>
+                )
+              )}
             </nav>
             <button
               type="button"
