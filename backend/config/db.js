@@ -16,6 +16,7 @@ const isSrvDnsError = (errorMessage = '') => {
 };
 
 const buildConnectOptions = () => ({
+  dbName: 'securelend',
   serverSelectionTimeoutMS: Number(process.env.MONGODB_SERVER_SELECTION_TIMEOUT_MS || 15000),
   connectTimeoutMS: Number(process.env.MONGODB_CONNECT_TIMEOUT_MS || 15000),
   socketTimeoutMS: Number(process.env.MONGODB_SOCKET_TIMEOUT_MS || 45000),
