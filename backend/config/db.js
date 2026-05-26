@@ -80,7 +80,7 @@ const buildStandardUriFromSrv = async (srvUri) => {
   const hostList = srvRecords
     .map((record) => `${record.name}:${record.port}`)
     .join(',');
-  const dbPath = parsed.pathname && parsed.pathname !== '/' ? parsed.pathname : '/securelend';
+  const dbPath = '/securelend';
 
   const username = parsed.username ? encodeURIComponent(decodeURIComponent(parsed.username)) : '';
   const password = parsed.password ? encodeURIComponent(decodeURIComponent(parsed.password)) : '';
@@ -89,6 +89,17 @@ const buildStandardUriFromSrv = async (srvUri) => {
     : '';
 
   return `mongodb://${credentials}${hostList}${dbPath}?${query.toString()}`;
+};
+
+const enforceSecurelendUri = (uri) => {
+  if (!uri) return uri;
+  try {
+    const parsed = new URL(uri);
+    parsed.pathname = '/securelend';
+    return parsed.toString();
+  } catch (err) {
+    return uri;
+  }
 };
 
 const connectDatabase = async () => {
@@ -101,15 +112,16 @@ const connectDatabase = async () => {
   }
 
   const options = buildConnectOptions();
+  const mainUri = enforceSecurelendUri(process.env.MONGODB_URI);
 
   try {
-    await connectWithUri(process.env.MONGODB_URI, options);
+    await connectWithUri(mainUri, options);
     console.log('MongoDB connected');
     return true;
   } catch (error) {
     console.warn('MongoDB Atlas connection failed:', error.message);
 
-    const fallbackUri = process.env.MONGODB_URI_FALLBACK;
+    const fallbackUri = enforceSecurelendUri(process.env.MONGODB_URI_FALLBACK);
     if (fallbackUri && isSrvDnsError(error.message)) {
       try {
         console.warn('Retrying MongoDB connection via MONGODB_URI_FALLBACK');
@@ -123,7 +135,7 @@ const connectDatabase = async () => {
 
     if (isSrvDnsError(error.message)) {
       try {
-        const generatedFallbackUri = await buildStandardUriFromSrv(process.env.MONGODB_URI);
+        const generatedFallbackUri = await buildStandardUriFromSrv(mainUri);
         if (generatedFallbackUri) {
           console.warn('Retrying MongoDB connection via generated non-SRV URI');
           await connectWithUri(generatedFallbackUri, options);
