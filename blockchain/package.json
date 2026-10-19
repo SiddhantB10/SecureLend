@@ -1,0 +1,17 @@
+{
+  "name": "securelend-blockchain",
+  "version": "1.0.0",
+  "private": true,
+  "scripts": {
+    "compile": "node scripts/compile.js",
+    "deploy": "node scripts/compile.js && node scripts/deploy.js",
+    "check-key": "node scripts/checkKey.js"
+  },
+  "dependencies": {
+    "@hashgraph/sdk": "^2.80.0",
+    "dotenv": "^17.4.2"
+  },
+  "devDependencies": {
+    "solc": "^0.8.24"
+  }
+}
