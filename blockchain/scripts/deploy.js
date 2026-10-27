@@ -46,7 +46,7 @@ async function main() {
   console.log('🌐 Network:', NETWORK);
 
   try {
-    // Read compiled contract bytecode from the Hardhat artifact
+    // Read compiled contract bytecode from the solc-compiled artifact
     const artifactPath = path.join(
       __dirname,
       '..',

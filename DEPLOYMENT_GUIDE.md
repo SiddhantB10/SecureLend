@@ -311,7 +311,7 @@ Fix:
 - Atlas IP access list includes Render outbound traffic (or `0.0.0.0/0`).
 - User/password in URI are URL-encoded if they contain special characters.
 
-### Error: Hardhat invalid private key
+### Error: Invalid private key (Hedera)
 
 Fix:
 
