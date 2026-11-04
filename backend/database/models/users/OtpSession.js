@@ -55,3 +55,4 @@ otpSessionSchema.index({ expiresAt: 1 }, { expireAfterSeconds: 0 });
 otpSessionSchema.index({ email: 1 });
 
 module.exports = mongoose.models.OtpSession || mongoose.model('OtpSession', otpSessionSchema);
+

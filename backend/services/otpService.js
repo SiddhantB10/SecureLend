@@ -70,3 +70,4 @@ const sendSmsOtp = async (phone, otp) => {
 // ─── Exports ─────────────────────────────────────────────────────────────────
 
 module.exports = { generateOtp, sendEmailOtp, sendSmsOtp };
+
