@@ -75,15 +75,26 @@ exports.sendOtp = async (req, res) => {
     const phoneOtp = generateOtp();
     const expiresAt = new Date(Date.now() + 10 * 60 * 1000); // 10 minutes
 
-    await OtpSession.create({ email: email.toLowerCase(), phone, emailOtp, phoneOtp, expiresAt });
+    // Save session BEFORE sending so we have the OTPs stored
+    const session = await OtpSession.create({ email: email.toLowerCase(), phone, emailOtp, phoneOtp, expiresAt });
 
-    // Send both OTPs in parallel — if SMS fails, still send email and warn
+    // Send both OTPs in parallel
     const results = await Promise.allSettled([
       sendEmailOtp(email, emailOtp),
       sendSmsOtp(phone, phoneOtp),
     ]);
 
-    const smsFailed = results[1].status === 'rejected';
+    const emailFailed = results[0].status === 'rejected';
+    const smsFailed   = results[1].status === 'rejected';
+
+    // If EMAIL failed, delete the session so user can retry immediately (not rate-limited)
+    if (emailFailed) {
+      await OtpSession.deleteOne({ _id: session._id });
+      console.error('Email OTP send error:', results[0].reason);
+      return res.status(500).json({
+        message: 'Failed to send email OTP. Check GMAIL_USER and GMAIL_APP_PASSWORD environment variables.',
+      });
+    }
 
     return res.json({
       message: smsFailed
