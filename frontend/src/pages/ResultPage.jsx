@@ -93,13 +93,27 @@ const ResultPage = () => {
             ['Loan type', loan.loanType || prediction.loanType || 'personal'],
             ['Decision', `${loan.status?.toUpperCase()} (${loan.decisionSource === 'admin' ? 'Admin' : 'AI'})`],
             ['Assessment engine', loan.aiModel || 'random_forest'],
-            ['Blockchain tx id', loan.blockchainTxHash || 'Not recorded yet'],
           ].map(([label, value]) => (
             <div key={label} className="rounded-2xl border border-gray-200 bg-gray-100 p-4">
               <p className="text-xs uppercase tracking-[0.25em] text-gray-600">{label}</p>
               <p className="mt-2 text-base font-semibold text-gray-900">{value}</p>
             </div>
           ))}
+          <div className="rounded-2xl border border-gray-200 bg-gray-100 p-4">
+            <p className="text-xs uppercase tracking-[0.25em] text-gray-600">Blockchain tx id</p>
+            {loan.blockchainTxHash ? (
+              <a
+                href={`https://hashscan.io/testnet/transaction/${loan.blockchainTxHash}`}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="mt-2 block break-all font-mono text-sm font-semibold text-neon-500 underline hover:text-neon-400"
+              >
+                {loan.blockchainTxHash}
+              </a>
+            ) : (
+              <p className="mt-2 text-base font-semibold text-gray-900">Not recorded yet</p>
+            )}
+          </div>
         </div>
       </div>
     </AppShell>

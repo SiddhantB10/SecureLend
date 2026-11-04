@@ -91,7 +91,19 @@ const UserDashboard = () => {
                       Type {(loan.loanType || 'personal').toUpperCase()} | Loan amount {formatInr(loan.loanAmount)} | Credit score {loan.creditScore}
                     </p>
                     <p className="mt-1 text-xs text-gray-500">
-                      Blockchain tx id: <span className="text-gray-700">{loan.blockchainTxHash || 'Not recorded yet'}</span>
+                      Blockchain tx id:{' '}
+                      {loan.blockchainTxHash ? (
+                        <a
+                          href={`https://hashscan.io/testnet/transaction/${loan.blockchainTxHash}`}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="font-mono text-neon-500 underline hover:text-neon-400 break-all"
+                        >
+                          {loan.blockchainTxHash}
+                        </a>
+                      ) : (
+                        <span className="text-gray-700">Not recorded yet</span>
+                      )}
                     </p>
                   </div>
                   <div className="text-right">
