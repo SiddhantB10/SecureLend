@@ -9,7 +9,14 @@ import { formatInr } from '../utils/formatters';
 const ResultPage = () => {
   const location = useLocation();
   const navigate = useNavigate();
-  const result = location.state || JSON.parse(localStorage.getItem('securelend:lastResult') || 'null');
+  const result = useMemo(() => {
+    if (location.state) return location.state;
+    try {
+      return JSON.parse(localStorage.getItem('securelend:lastResult') || 'null');
+    } catch {
+      return null;
+    }
+  }, [location.state]);
 
   const loan = result?.loan;
   const prediction = result?.prediction;

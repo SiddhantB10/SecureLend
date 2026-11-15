@@ -1,3 +1,4 @@
+const mongoose = require('mongoose');
 const Loan = require('../models/Loan');
 const { predictLoanRisk } = require('../services/mlService');
 const { recordLoanDecision } = require('../services/blockchainService');
@@ -129,6 +130,7 @@ exports.applyLoan = async (req, res) => {
         await loan.save();
       } catch (chainError) {
         // Keep loan creation non-blocking if blockchain is unavailable.
+        console.error('Blockchain logging failed:', chainError.message);
       }
     }
 
@@ -181,8 +183,18 @@ exports.getAllLoans = async (req, res) => {
 
 exports.getLoanById = async (req, res) => {
   try {
+    if (!mongoose.isValidObjectId(req.params.id)) {
+      return res.status(404).json({ message: 'Loan application not found' });
+    }
+
     const loan = await Loan.findById(req.params.id).populate('userId', 'name email phone role');
     if (!loan) {
+      return res.status(404).json({ message: 'Loan application not found' });
+    }
+
+    // Users may only view their own applications; admins can view all.
+    const ownerId = loan.userId?._id ? loan.userId._id.toString() : String(loan.userId);
+    if (req.user.role !== 'admin' && ownerId !== req.user.id) {
       return res.status(404).json({ message: 'Loan application not found' });
     }
 
@@ -195,13 +207,16 @@ exports.getLoanById = async (req, res) => {
 exports.updateLoanStatus = async (req, res) => {
   try {
     const { status, adminNotes } = req.body;
+    if (!mongoose.isValidObjectId(req.params.id)) {
+      return res.status(404).json({ message: 'Loan application not found' });
+    }
     const loan = await Loan.findById(req.params.id);
 
     if (!loan) {
       return res.status(404).json({ message: 'Loan application not found' });
     }
 
-    if (loan.status !== 'review') {
+    if (!['review', 'pending'].includes(loan.status)) {
       return res.status(400).json({
         message: 'Only applications in review can be manually approved or rejected',
       });
@@ -221,23 +236,24 @@ exports.updateLoanStatus = async (req, res) => {
 
     await loan.save();
 
-    if (!loan.blockchainRecorded && status !== 'pending') {
-      try {
-        const chainResult = await recordLoanDecision({
-          loanId: loan._id.toString(),
-          loanType: loan.loanType,
-          riskScore: loan.riskScore,
-          decision: status,
-        });
+    if (!loan.blockchainRecorded) {
+      // recordLoanDecision never throws; it reports failures in its result.
+      const chainResult = await recordLoanDecision({
+        loanId: loan._id.toString(),
+        loanType: loan.loanType,
+        riskScore: loan.riskScore,
+        decision: status,
+      });
 
-        loan.blockchainRecorded = chainResult.blockchainEnabled;
+      if (chainResult.blockchainEnabled) {
+        loan.blockchainRecorded = true;
         loan.blockchainTxHash = chainResult.txHash;
         await loan.save();
-      } catch (chainError) {
+      } else {
         return res.json({
           message: 'Loan status updated successfully, but blockchain logging is unavailable',
           loan,
-          blockchainWarning: chainError.message,
+          blockchainWarning: chainResult.error,
         });
       }
     }

@@ -1,4 +1,5 @@
 const { User, Loan, AdminAccount, AdminProfile, AdminAuditLog } = require('./models');
+const OtpSession = require('./models/users/OtpSession');
 
 let ensured = false;
 
@@ -13,6 +14,7 @@ const ensureIndexes = async () => {
     AdminAccount.createIndexes(),
     AdminProfile.createIndexes(),
     AdminAuditLog.createIndexes(),
+    OtpSession.createIndexes(),
   ]);
 
   ensured = true;

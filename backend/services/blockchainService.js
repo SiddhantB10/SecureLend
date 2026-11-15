@@ -30,6 +30,26 @@ const parsePrivateKey = () => {
     keyHex = keyHex.slice(2);
   }
 
+  // DER-encoded keys (as shown in the Hedera portal, e.g. "302e..." / "3030...")
+  // carry their own key type, so parse them generically.
+  if (/^30[0-9a-f]{2}/i.test(keyHex) && keyHex.length > 64) {
+    try {
+      return PrivateKey.fromStringDer(keyHex);
+    } catch (derError) {
+      // fall through to raw-key parsing
+    }
+  }
+
+  // Explicit type hint avoids mis-reading a raw ECDSA key as ED25519 (both are 32 bytes).
+  if (String(process.env.HEDERA_KEY_TYPE || '').toLowerCase() === 'ecdsa') {
+    try {
+      return PrivateKey.fromStringECDSA(keyHex);
+    } catch (e) {
+      console.error('Invalid ECDSA private key:', e.message);
+      return null;
+    }
+  }
+
   try {
     return PrivateKey.fromStringED25519(keyHex);
   } catch (e1) {
@@ -52,7 +72,7 @@ const getClient = () => {
     return null;
   }
 
-  const client = Client.forTestnet();
+  const client = NETWORK === 'mainnet' ? Client.forMainnet() : Client.forTestnet();
   client.setOperator(ACCOUNT_ID, privateKey);
   return client;
 };
@@ -97,7 +117,7 @@ const recordLoanDecision = async ({ loanId, loanType, riskScore, decision }) => 
     const executeContractSubmitTx = await executeContractTx.execute(client);
     const executeContractRx = await executeContractSubmitTx.getReceipt(client);
 
-    console.log('✅ Loan recorded on Hedera');
+    console.log('✅ Loan recorded on Hedera:', executeContractRx.status.toString());
     const txHash = executeContractSubmitTx.transactionId
       ? executeContractSubmitTx.transactionId.toString()
       : '';
@@ -153,13 +173,13 @@ const getLoan = async (loanId) => {
 
     // Parse response - returns (uint256, string, uint256, string, uint256)
     try {
-      const result = queryResponse.getResult();
+      const result = queryResponse.getResult(['uint256', 'string', 'uint256', 'string', 'uint256']);
       return {
         loanId: result[0].toString(),
         loanType: result[1],
-        riskScore: Number(result[2]) / 1000, // Reverse the scaling
+        riskScore: Number(result[2].toString()) / 1000, // Reverse the scaling
         decision: result[3],
-        timestamp: Number(result[4]),
+        timestamp: Number(result[4].toString()),
       };
     } catch (parseError) {
       console.error('Error parsing response:', parseError.message);

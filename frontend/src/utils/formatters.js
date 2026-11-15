@@ -12,4 +12,5 @@ export const formatInr = (value) => {
   return inrFormatter.format(amount);
 };
 
-export const formatIndianMonth = (value) => new Date(value).toLocaleString('en-IN', { month: 'short' });
+export const formatIndianMonth = (value) =>
+  new Date(value).toLocaleString('en-IN', { month: 'short', year: '2-digit' });

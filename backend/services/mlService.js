@@ -19,8 +19,9 @@ const getCandidateBaseUrls = () => {
 };
 
 const predictLoanRisk = async (payload) => {
-  const timeoutMs = Number(process.env.ML_SERVICE_TIMEOUT_MS || 3500);
-  const timeout = Number.isFinite(timeoutMs) && timeoutMs > 0 ? timeoutMs : 3500;
+  // Hosted ML services (e.g. Render free tier) can take several seconds to respond.
+  const timeoutMs = Number(process.env.ML_SERVICE_TIMEOUT_MS || 10000);
+  const timeout = Number.isFinite(timeoutMs) && timeoutMs > 0 ? timeoutMs : 10000;
   const errors = [];
 
   for (const baseUrl of getCandidateBaseUrls()) {
@@ -35,6 +36,19 @@ const predictLoanRisk = async (payload) => {
   throw new Error(`ML prediction failed (${errors.join(' | ')})`);
 };
 
+/**
+ * Ping the ML service so a sleeping free-tier instance wakes up before the
+ * first loan application arrives. Runs at boot and every 10 minutes.
+ */
+const startMlKeepWarm = () => {
+  const configured = String(process.env.ML_SERVICE_URL || '').trim();
+  if (!configured || process.env.ML_KEEP_WARM === 'false') return;
+  const ping = () => axios.get(`${configured}/health`, { timeout: 60000 }).catch(() => {});
+  ping();
+  setInterval(ping, 10 * 60 * 1000).unref();
+};
+
 module.exports = {
   predictLoanRisk,
+  startMlKeepWarm,
 };

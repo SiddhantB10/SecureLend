@@ -15,12 +15,16 @@ const UserDashboard = () => {
   const { user } = useAuth();
   const [loans, setLoans] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState('');
 
   const loadLoans = async () => {
     setLoading(true);
+    setError('');
     try {
       const { data } = await api.get('/my-loans');
       setLoans(data.loans || []);
+    } catch (err) {
+      setError(err.response?.data?.message || 'Unable to load your applications');
     } finally {
       setLoading(false);
     }
@@ -71,6 +75,9 @@ const UserDashboard = () => {
         />
 
         <div className="mt-6 space-y-4">
+          {error ? (
+            <div className="rounded-2xl border border-red-500/30 bg-red-500/10 px-4 py-3 text-sm text-red-600">{error}</div>
+          ) : null}
           {loading ? (
             <div className="rounded-2xl border border-gray-200 bg-gray-100 p-6 text-gray-600">Loading your applications...</div>
           ) : loans.length ? (
@@ -108,7 +115,7 @@ const UserDashboard = () => {
                   </div>
                   <div className="text-right">
                     <p className="text-xs uppercase tracking-[0.25em] text-gray-600">Risk score</p>
-                    <p className="mt-2 text-2xl font-semibold text-neon-500">{Math.round(loan.riskScore * 100)}%</p>
+                    <p className="mt-2 text-2xl font-semibold text-neon-500">{Math.round((loan.riskScore || 0) * 100)}%</p>
                     <p className="text-sm text-gray-600">{loan.riskCategory} risk</p>
                   </div>
                 </div>

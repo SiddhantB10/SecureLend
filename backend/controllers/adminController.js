@@ -40,7 +40,7 @@ exports.setupAdmin = async (req, res) => {
         active: true,
         permissions: ['loan:review', 'loan:approve', 'loan:reject', 'admin:manage'],
       },
-      { upsert: true, new: true }
+      { upsert: true, returnDocument: 'after' }
     );
 
     await User.deleteOne({ email: adminEmail });

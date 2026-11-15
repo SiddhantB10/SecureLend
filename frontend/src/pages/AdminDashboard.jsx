@@ -30,12 +30,18 @@ const STATUS_COLORS = {
 const AdminDashboard = () => {
   const [loans, setLoans] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState('');
+  const [notice, setNotice] = useState('');
+  const [updatingId, setUpdatingId] = useState(null);
 
   const loadLoans = async () => {
     setLoading(true);
+    setError('');
     try {
       const { data } = await api.get('/all-loans');
       setLoans(data.loans || []);
+    } catch (err) {
+      setError(err.response?.data?.message || 'Unable to load applications');
     } finally {
       setLoading(false);
     }
@@ -65,17 +71,34 @@ const AdminDashboard = () => {
   }, [loans]);
 
   const monthlyStats = useMemo(() => {
+    // Bucket by year+month so e.g. Nov 2025 and Nov 2026 are not merged, and keep chronological order.
     const buckets = new Map();
     loans.forEach((loan) => {
-      const bucket = formatIndianMonth(loan.createdAt);
-      buckets.set(bucket, (buckets.get(bucket) || 0) + 1);
+      const date = new Date(loan.createdAt);
+      if (Number.isNaN(date.getTime())) return;
+      const key = date.getFullYear() * 12 + date.getMonth();
+      const current = buckets.get(key) || { month: formatIndianMonth(date), count: 0 };
+      current.count += 1;
+      buckets.set(key, current);
     });
-    return Array.from(buckets.entries()).map(([month, count]) => ({ month, count }));
+    return Array.from(buckets.entries())
+      .sort(([a], [b]) => a - b)
+      .map(([, value]) => value);
   }, [loans]);
 
   const updateStatus = async (id, status) => {
-    await api.put(`/loan/${id}/status`, { status });
-    await loadLoans();
+    setUpdatingId(id);
+    setError('');
+    setNotice('');
+    try {
+      const { data } = await api.put(`/loan/${id}/status`, { status });
+      if (data.blockchainWarning) setNotice(data.message);
+      await loadLoans();
+    } catch (err) {
+      setError(err.response?.data?.message || 'Unable to update loan status');
+    } finally {
+      setUpdatingId(null);
+    }
   };
 
   return (
@@ -137,6 +160,12 @@ const AdminDashboard = () => {
         />
 
         <div className="mt-6 space-y-4">
+          {error ? (
+            <div className="rounded-2xl border border-red-500/30 bg-red-500/10 px-4 py-3 text-sm text-red-600">{error}</div>
+          ) : null}
+          {notice ? (
+            <div className="rounded-2xl border border-amber-500/30 bg-amber-500/10 px-4 py-3 text-sm text-amber-700">{notice}</div>
+          ) : null}
           {loading ? (
             <div className="rounded-2xl border border-gray-200 bg-gray-100 p-6 text-gray-600">Loading applications...</div>
           ) : loans.length ? (
@@ -175,10 +204,10 @@ const AdminDashboard = () => {
                   <div className="flex flex-wrap gap-2 lg:justify-end">
                     {loan.status === 'review' || loan.status === 'pending' ? (
                       <>
-                        <button onClick={() => updateStatus(loan._id, 'approved')} className="rounded-full border border-emerald-500/30 bg-emerald-500/10 px-4 py-2 text-sm font-semibold text-emerald-600">
+                        <button disabled={updatingId === loan._id} onClick={() => updateStatus(loan._id, 'approved')} className="rounded-full disabled:opacity-50 border border-emerald-500/30 bg-emerald-500/10 px-4 py-2 text-sm font-semibold text-emerald-600">
                           Approve
                         </button>
-                        <button onClick={() => updateStatus(loan._id, 'rejected')} className="rounded-full border border-red-500/30 bg-red-500/10 px-4 py-2 text-sm font-semibold text-red-600">
+                        <button disabled={updatingId === loan._id} onClick={() => updateStatus(loan._id, 'rejected')} className="rounded-full disabled:opacity-50 border border-red-500/30 bg-red-500/10 px-4 py-2 text-sm font-semibold text-red-600">
                           Reject
                         </button>
                       </>

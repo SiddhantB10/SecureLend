@@ -68,7 +68,7 @@ const AuthForm = ({
             value={values.password}
             onChange={onChange}
             className={controlClass}
-            placeholder="Create a secure password"
+            placeholder={isLogin ? 'Enter your password' : 'Create a secure password'}
           />
           {errors.password ? <span className="text-xs text-red-400">{errors.password}</span> : null}
         </label>
@@ -99,7 +99,7 @@ const AuthForm = ({
         {loading ? 'Please wait...' : isLogin ? 'Sign in' : 'Create account'}
       </button>
 
-      <p className="mt-5 text-center text-sm text-white/55">
+      <p className="mt-5 text-center text-sm text-gray-500">
         {isLogin ? "Need an account? " : 'Already have an account? '}
         <Link to={isLogin ? '/signup' : '/login'} className="font-medium text-neon-500 hover:text-neon-400">
           {isLogin ? 'Sign up' : 'Log in'}

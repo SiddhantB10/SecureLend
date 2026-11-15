@@ -2,11 +2,10 @@ import { useState, useEffect, useRef } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { ShieldCheck, Mail, Phone, ArrowRight, RotateCcw, CheckCircle2 } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
-import axios from 'axios';
+import api from '../api/client';
 
 const indianPhoneRegex = /^(?:\+91[-\s]?)?[6-9]\d{9}$/;
-const apiBaseUrl = import.meta.env.VITE_API_URL || 'http://127.0.0.1:5000';
-const api = axios.create({ baseURL: apiBaseUrl, timeout: 15000 });
+const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
 // ─── OTP Input (6 boxes) ─────────────────────────────────────────────────────
 const OtpInput = ({ value, onChange, hasError }) => {
@@ -87,6 +86,7 @@ const SignupPage = () => {
   const [phoneOtp, setPhoneOtp] = useState('');
   const [otpErrors, setOtpErrors] = useState({});
   const [verifiedToken, setVerifiedToken] = useState(null);
+  const [smsFailed, setSmsFailed] = useState(false); // true when SMS couldn't be delivered
 
   const [loading, setLoading] = useState(false);
   const [banner, setBanner] = useState(null); // { type: 'error'|'info', text }
@@ -102,7 +102,7 @@ const SignupPage = () => {
   const validateDetails = () => {
     const errs = {};
     if (form.name.trim().length < 2) errs.name = 'Name must be at least 2 characters';
-    if (!form.email.includes('@')) errs.email = 'Enter a valid email address';
+    if (!emailRegex.test(form.email.trim())) errs.email = 'Enter a valid email address';
     if (!indianPhoneRegex.test(form.phone.trim())) errs.phone = 'Enter a valid Indian phone number';
     if (form.password.length < 8) errs.password = 'Password must be at least 8 characters';
     return errs;
@@ -117,11 +117,14 @@ const SignupPage = () => {
     setLoading(true);
     setBanner(null);
     try {
-      const { data } = await api.post('/auth/send-otp', { email: form.email, phone: form.phone });
+      const { data } = await api.post('/auth/send-otp', { email: form.email.trim(), phone: form.phone.trim() });
       setStep(2);
       startCooldown();
-      if (data.smsFailed) {
-        setBanner({ type: 'info', text: 'Email OTP sent. SMS delivery failed — verify phone number is correct.' });
+      setSmsFailed(!!data.smsFailed);
+      if (data.emailFailed) {
+        setBanner({ type: 'info', text: data.message });
+      } else if (data.smsFailed) {
+        setBanner({ type: 'info', text: 'Email OTP sent ✓  SMS delivery failed — only email OTP is required to continue.' });
       } else {
         setBanner({ type: 'info', text: 'OTP sent to your email and phone. Check both!' });
       }
@@ -145,7 +148,7 @@ const SignupPage = () => {
     e.preventDefault();
     const errs = {};
     if (emailOtp.length !== 6) errs.emailOtp = 'Enter the 6-digit email OTP';
-    if (phoneOtp.length !== 6) errs.phoneOtp = 'Enter the 6-digit phone OTP';
+    if (!smsFailed && phoneOtp.length !== 6) errs.phoneOtp = 'Enter the 6-digit phone OTP';
     setOtpErrors(errs);
     if (Object.keys(errs).length) return;
 
@@ -153,9 +156,9 @@ const SignupPage = () => {
     setBanner(null);
     try {
       const { data } = await api.post('/auth/verify-otp', {
-        email: form.email,
+        email: form.email.trim(),
         emailOtp,
-        phoneOtp,
+        phoneOtp: smsFailed ? '' : phoneOtp,
       });
       setVerifiedToken(data.verifiedToken);
       // Auto-complete signup
@@ -176,7 +179,13 @@ const SignupPage = () => {
   // ── Step 3: Create account ───────────────────────────────────────────────
   const handleSignup = async (token) => {
     try {
-      const response = await signup({ ...form, verifiedToken: token });
+      const response = await signup({
+        ...form,
+        name: form.name.trim(),
+        email: form.email.trim(),
+        phone: form.phone.trim(),
+        verifiedToken: token,
+      });
       navigate(response.user.role === 'admin' ? '/admin' : '/dashboard');
     } catch (err) {
       setBanner({ type: 'error', text: err.response?.data?.message || 'Account creation failed. Please try again.' });
@@ -289,7 +298,11 @@ const SignupPage = () => {
                 <div>
                   <h2 className="text-2xl font-semibold text-gray-900">Verify your identity</h2>
                   <p className="mt-1 text-sm text-gray-500">
-                    Enter the 6-digit codes sent to <strong>{form.email}</strong> and <strong>{form.phone}</strong>.
+                    {smsFailed ? (
+                      <>Enter the 6-digit code sent to <strong>{form.email}</strong>.</>
+                    ) : (
+                      <>Enter the 6-digit codes sent to <strong>{form.email}</strong> and <strong>{form.phone}</strong>.</>
+                    )}
                   </p>
                 </div>
 
@@ -303,13 +316,15 @@ const SignupPage = () => {
                 </div>
 
                 {/* Phone OTP */}
-                <div>
-                  <label className="mb-2 flex items-center gap-2 text-xs font-semibold uppercase tracking-widest text-gray-600">
-                    <Phone className="h-4 w-4" /> Phone OTP
-                  </label>
-                  <OtpInput value={phoneOtp} onChange={setPhoneOtp} hasError={!!otpErrors.phoneOtp} />
-                  {otpErrors.phoneOtp && <p className="mt-1 text-xs text-red-500">{otpErrors.phoneOtp}</p>}
-                </div>
+                {!smsFailed && (
+                  <div>
+                    <label className="mb-2 flex items-center gap-2 text-xs font-semibold uppercase tracking-widest text-gray-600">
+                      <Phone className="h-4 w-4" /> Phone OTP
+                    </label>
+                    <OtpInput value={phoneOtp} onChange={setPhoneOtp} hasError={!!otpErrors.phoneOtp} />
+                    {otpErrors.phoneOtp && <p className="mt-1 text-xs text-red-500">{otpErrors.phoneOtp}</p>}
+                  </div>
+                )}
 
                 <button
                   type="submit"

@@ -4,7 +4,16 @@ const crypto = require('crypto');
 const User = require('../models/User');
 const AdminAccount = require('../database/models/admin/AdminAccount');
 const OtpSession = require('../database/models/users/OtpSession');
-const { generateOtp, sendEmailOtp, sendSmsOtp } = require('../services/otpService');
+const { generateOtp, normalisePhone, sendEmailOtp, sendSmsOtp, OTP_TTL_MINUTES } = require('../services/otpService');
+
+const isProduction = () => process.env.NODE_ENV === 'production';
+
+/** Constant-time string comparison for OTP codes */
+const safeEqual = (a, b) => {
+  const left = Buffer.from(String(a || ''));
+  const right = Buffer.from(String(b || ''));
+  return left.length === right.length && crypto.timingSafeEqual(left, right);
+};
 
 // ─── Helpers ─────────────────────────────────────────────────────────────────
 
@@ -40,7 +49,7 @@ const mapSignupError = (error) => {
     return { status: 400, message: firstFieldError?.message || 'Invalid signup details' };
   }
 
-  if (error.name === 'MongoServerSelectionError') {
+  if (error.name === 'MongoServerSelectionError' || error.name === 'MongooseServerSelectionError') {
     return { status: 503, message: 'Database connection failed. Please try again in a moment.' };
   }
 
@@ -52,15 +61,19 @@ const mapSignupError = (error) => {
 exports.sendOtp = async (req, res) => {
   try {
     const { email, phone } = req.body;
+    const normalizedEmail = email.toLowerCase().trim();
 
-    // Block if email already registered
-    const existingUser = await User.findOne({ email: email.toLowerCase() });
-    if (existingUser) {
+    // Block if email already registered (as a user or an admin)
+    const [existingUser, existingAdmin] = await Promise.all([
+      User.findOne({ email: normalizedEmail }),
+      AdminAccount.findOne({ email: normalizedEmail }),
+    ]);
+    if (existingUser || existingAdmin) {
       return res.status(409).json({ message: 'An account with this email already exists' });
     }
 
     // Rate-limit: allow resend only after 60 seconds
-    const existing = await OtpSession.findOne({ email: email.toLowerCase() });
+    const existing = await OtpSession.findOne({ email: normalizedEmail });
     if (existing) {
       const secondsSinceCreated = (Date.now() - new Date(existing.createdAt).getTime()) / 1000;
       if (secondsSinceCreated < 60) {
@@ -68,39 +81,55 @@ exports.sendOtp = async (req, res) => {
           message: `Please wait ${Math.ceil(60 - secondsSinceCreated)} seconds before requesting a new OTP`,
         });
       }
-      await OtpSession.deleteOne({ _id: existing._id });
+      await OtpSession.deleteMany({ email: normalizedEmail });
     }
 
     const emailOtp = generateOtp();
     const phoneOtp = generateOtp();
-    const expiresAt = new Date(Date.now() + 10 * 60 * 1000); // 10 minutes
+    const expiresAt = new Date(Date.now() + OTP_TTL_MINUTES * 60 * 1000);
 
     // Save session BEFORE sending so we have the OTPs stored
-    const session = await OtpSession.create({ email: email.toLowerCase(), phone, emailOtp, phoneOtp, expiresAt });
+    const session = await OtpSession.create({ email: normalizedEmail, phone, emailOtp, phoneOtp, expiresAt });
 
     // Send both OTPs in parallel
     const results = await Promise.allSettled([
-      sendEmailOtp(email, emailOtp),
+      sendEmailOtp(normalizedEmail, emailOtp),
       sendSmsOtp(phone, phoneOtp),
     ]);
 
     const emailFailed = results[0].status === 'rejected';
     const smsFailed   = results[1].status === 'rejected';
 
+    if (!isProduction()) {
+      // Local development aid: OTPs are printed only when NODE_ENV is not production.
+      console.log(`[DEV OTP] ${normalizedEmail} -> email OTP ${emailOtp}, phone OTP ${phoneOtp}`);
+    }
+
     // If EMAIL failed, delete the session so user can retry immediately (not rate-limited)
     if (emailFailed) {
-      await OtpSession.deleteOne({ _id: session._id });
-      console.error('Email OTP send error:', results[0].reason);
-      return res.status(500).json({
-        message: 'Failed to send email OTP. Check GMAIL_USER and GMAIL_APP_PASSWORD environment variables.',
-      });
+      console.error('Email OTP send error:', results[0].reason?.message || results[0].reason);
+      if (isProduction()) {
+        await OtpSession.deleteOne({ _id: session._id });
+        return res.status(502).json({
+          message: 'We could not send the email OTP right now. Please try again in a minute.',
+        });
+      }
+    }
+
+    // If SMS failed, mark it in session so verify step skips phone OTP check
+    if (smsFailed) {
+      console.error('SMS OTP send error:', results[1].reason?.message || results[1].reason);
+      await OtpSession.updateOne({ _id: session._id }, { smsSent: false });
     }
 
     return res.json({
-      message: smsFailed
-        ? 'Email OTP sent. SMS delivery failed — please check your phone number or retry.'
-        : 'OTP sent to your email and phone number',
+      message: emailFailed
+        ? 'Email delivery failed (development mode): the OTP is printed in the backend console.'
+        : smsFailed
+          ? 'Email OTP sent. SMS delivery failed — verify with email OTP only.'
+          : 'OTP sent to your email and phone number',
       smsFailed,
+      emailFailed,
     });
   } catch (error) {
     console.error('sendOtp error:', error);
@@ -114,7 +143,7 @@ exports.verifyOtp = async (req, res) => {
   try {
     const { email, emailOtp, phoneOtp } = req.body;
 
-    const session = await OtpSession.findOne({ email: email.toLowerCase() });
+    const session = await OtpSession.findOne({ email: email.toLowerCase().trim() }).sort({ createdAt: -1 });
 
     if (!session) {
       return res.status(400).json({ message: 'No OTP session found. Please request a new OTP.' });
@@ -131,8 +160,9 @@ exports.verifyOtp = async (req, res) => {
       return res.status(400).json({ message: 'Too many incorrect attempts. Please request a new OTP.' });
     }
 
-    const emailMatch = session.emailOtp === emailOtp.trim();
-    const phoneMatch = session.phoneOtp === phoneOtp.trim();
+    const emailMatch = safeEqual(session.emailOtp, String(emailOtp).trim());
+    // If SMS was never sent, skip phone OTP check (treat phone as auto-verified)
+    const phoneMatch = session.smsSent === false ? true : safeEqual(session.phoneOtp, String(phoneOtp || '').trim());
 
     if (!emailMatch || !phoneMatch) {
       await OtpSession.updateOne({ _id: session._id }, { $inc: { attempts: 1 } });
@@ -142,14 +172,25 @@ exports.verifyOtp = async (req, res) => {
       return res.status(400).json({ message: 'Incorrect OTP(s)', invalidFields: errors });
     }
 
-    // Both OTPs correct — issue a short-lived verified token (15 min)
+    // OTPs verified — issue a short-lived verified token (15 min)
     const verifiedToken = crypto.randomBytes(32).toString('hex');
     await OtpSession.updateOne(
       { _id: session._id },
-      { emailVerified: true, phoneVerified: true, verifiedToken, expiresAt: new Date(Date.now() + 15 * 60 * 1000) }
+      {
+        emailVerified: true,
+        phoneVerified: session.smsSent !== false,
+        verifiedToken,
+        expiresAt: new Date(Date.now() + 15 * 60 * 1000),
+      }
     );
 
-    return res.json({ message: 'Both OTPs verified successfully', verifiedToken });
+    return res.json({
+      message: session.smsSent === false
+        ? 'Email OTP verified (phone OTP skipped — SMS not delivered)'
+        : 'Both OTPs verified successfully',
+      verifiedToken,
+      smsSent: session.smsSent !== false,
+    });
   } catch (error) {
     console.error('verifyOtp error:', error);
     return res.status(500).json({ message: 'Verification failed. Please try again.' });
@@ -163,14 +204,14 @@ exports.signup = async (req, res) => {
     const { name, email, password, phone, verifiedToken } = req.body;
 
     // Check verifiedToken from OTP session
+    const normalizedEmail = email.toLowerCase().trim();
     const session = await OtpSession.findOne({
-      email: email.toLowerCase(),
+      email: normalizedEmail,
       verifiedToken,
       emailVerified: true,
-      phoneVerified: true,
     });
 
-    if (!session) {
+    if (!session || (session.smsSent !== false && !session.phoneVerified)) {
       return res.status(403).json({
         message: 'Email and phone not verified. Please complete OTP verification first.',
       });
@@ -181,7 +222,12 @@ exports.signup = async (req, res) => {
       return res.status(403).json({ message: 'Verification session expired. Please verify again.' });
     }
 
-    const existingUser = await User.findOne({ email: email.toLowerCase() });
+    // The phone number must be the one the OTP was sent to.
+    if (normalisePhone(session.phone) !== normalisePhone(phone)) {
+      return res.status(400).json({ message: 'Phone number does not match the verified number. Please verify again.' });
+    }
+
+    const existingUser = await User.findOne({ email: normalizedEmail });
     if (existingUser) {
       return res.status(409).json({ message: 'An account with this email already exists' });
     }
@@ -194,7 +240,7 @@ exports.signup = async (req, res) => {
       phone,
       role: 'user',
       emailVerified: true,
-      phoneVerified: true,
+      phoneVerified: session.smsSent !== false,
     });
 
     // Clean up the OTP session
@@ -219,8 +265,8 @@ exports.login = async (req, res) => {
   try {
     const { email, password } = req.body;
 
-    const normalizedEmail = email.toLowerCase();
-    const admin = await AdminAccount.findOne({ email: normalizedEmail });
+    const normalizedEmail = email.toLowerCase().trim();
+    const admin = await AdminAccount.findOne({ email: normalizedEmail, active: { $ne: false } });
     const user = admin ? null : await User.findOne({ email: normalizedEmail });
     const account = admin || user;
 
@@ -241,6 +287,10 @@ exports.login = async (req, res) => {
       user: sanitizeUser(account),
     });
   } catch (error) {
-    return res.status(500).json({ message: 'Failed to log in', error: error.message });
+    console.error('login error:', error);
+    if (error.name === 'MongoServerSelectionError' || error.name === 'MongooseServerSelectionError') {
+      return res.status(503).json({ message: 'Database connection failed. Please try again in a moment.' });
+    }
+    return res.status(500).json({ message: 'Failed to log in' });
   }
 };

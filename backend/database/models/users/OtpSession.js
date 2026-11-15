@@ -38,6 +38,11 @@ const otpSessionSchema = new mongoose.Schema(
       type: Number,
       default: 0,
     },
+    // If SMS couldn't be delivered, phone OTP check is skipped on verify
+    smsSent: {
+      type: Boolean,
+      default: true,
+    },
     expiresAt: {
       type: Date,
       required: true,

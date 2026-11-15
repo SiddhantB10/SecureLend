@@ -1,4 +1,4 @@
-require('dotenv').config({ path: require('path').join(__dirname, '..', '.env') });
+require('dotenv').config({ path: require('path').join(__dirname, '..', '.env'), quiet: true });
 const bcrypt = require('bcryptjs');
 const connectDatabase = require('../config/db');
 const User = require('../models/User');
@@ -44,7 +44,7 @@ const seedAdmin = async () => {
       active: true,
       permissions: ['loan:review', 'loan:approve', 'loan:reject', 'admin:manage'],
     },
-    { upsert: true, new: true }
+    { upsert: true, returnDocument: 'after' }
   );
 
   await User.deleteOne({ email: adminEmail.toLowerCase() });

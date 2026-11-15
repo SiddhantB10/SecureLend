@@ -119,7 +119,8 @@ def top_feature_importances(feature_names: list[str], importances: list[float], 
     pairs = sorted(zip(feature_names, importances), key=lambda item: item[1], reverse=True)[:limit]
     return [
         {
-            'feature': feature,
+            # Strip sklearn ColumnTransformer prefixes ("numeric__", "categorical__") for display.
+            'feature': str(feature).split('__', 1)[-1],
             'importance': round(float(score), 4),
         }
         for feature, score in pairs

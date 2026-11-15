@@ -2,6 +2,7 @@ const express = require('express');
 const cors = require('cors');
 const helmet = require('helmet');
 const morgan = require('morgan');
+const mongoose = require('mongoose');
 const authRoutes = require('./routes/authRoutes');
 const loanRoutes = require('./routes/loanRoutes');
 const adminRoutes = require('./routes/adminRoutes');
@@ -55,7 +56,12 @@ app.get('/', (req, res) => {
 });
 
 app.get('/health', (req, res) => {
-  res.json({ status: 'ok', service: 'securelend-backend' });
+  const dbStates = ['disconnected', 'connected', 'connecting', 'disconnecting'];
+  res.json({
+    status: 'ok',
+    service: 'securelend-backend',
+    database: dbStates[mongoose.connection.readyState] || 'unknown',
+  });
 });
 
 app.use(authRoutes);
@@ -64,6 +70,19 @@ app.use(adminRoutes);
 
 app.use((req, res) => {
   res.status(404).json({ message: 'Route not found' });
+});
+
+// Central error handler: always answer JSON (malformed JSON bodies, CORS rejections, etc.)
+// eslint-disable-next-line no-unused-vars
+app.use((err, req, res, next) => {
+  if (err.type === 'entity.parse.failed') {
+    return res.status(400).json({ message: 'Request body is not valid JSON' });
+  }
+  if (String(err.message || '').startsWith('CORS blocked')) {
+    return res.status(403).json({ message: err.message });
+  }
+  console.error('Unhandled error:', err);
+  return res.status(err.status || 500).json({ message: 'Internal server error' });
 });
 
 module.exports = app;

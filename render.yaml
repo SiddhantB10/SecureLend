@@ -35,6 +35,23 @@ services:
         sync: false
       - key: ADMIN_PHONE
         value: +10000000000
+      # OTP delivery. Render free web services block SMTP ports, so use Brevo (HTTPS) there.
+      - key: BREVO_API_KEY
+        sync: false
+      - key: EMAIL_FROM
+        sync: false
+      - key: GMAIL_USER
+        sync: false
+      - key: GMAIL_APP_PASSWORD
+        sync: false
+      - key: FAST2SMS_API_KEY
+        sync: false
+      - key: FAST2SMS_ROUTE
+        value: q
+      - key: ML_SERVICE_TIMEOUT_MS
+        value: "10000"
+      - key: ADMIN_SETUP_SECRET
+        sync: false
 
   - type: web
     name: securelend-ml-api

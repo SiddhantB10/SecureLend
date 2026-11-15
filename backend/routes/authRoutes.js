@@ -26,7 +26,7 @@ router.post(
   [
     body('email').isEmail().withMessage('Enter a valid email address'),
     body('emailOtp').isLength({ min: 6, max: 6 }).isNumeric().withMessage('Enter a valid 6-digit email OTP'),
-    body('phoneOtp').isLength({ min: 6, max: 6 }).isNumeric().withMessage('Enter a valid 6-digit phone OTP'),
+    body('phoneOtp').optional({ values: 'falsy' }).isLength({ min: 6, max: 6 }).isNumeric().withMessage('Enter a valid 6-digit phone OTP'),
   ],
   validateRequest,
   authController.verifyOtp
