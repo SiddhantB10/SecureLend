@@ -4,6 +4,7 @@ const crypto = require('crypto');
 const User = require('../models/User');
 const AdminAccount = require('../database/models/admin/AdminAccount');
 const OtpSession = require('../database/models/users/OtpSession');
+const { logAdminAction } = require('../services/auditLogService');
 const { generateOtp, normalisePhone, sendEmailOtp, sendSmsOtp, OTP_TTL_MINUTES } = require('../services/otpService');
 
 const isProduction = () => process.env.NODE_ENV === 'production';
@@ -280,6 +281,10 @@ exports.login = async (req, res) => {
     }
 
     const token = buildToken(account);
+
+    if (admin) {
+      await logAdminAction({ adminId: admin._id, action: 'ADMIN_LOGIN', entityType: 'session', entityId: admin._id, metadata: { ip: req.ip } });
+    }
 
     return res.json({
       message: 'Login successful',

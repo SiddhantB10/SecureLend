@@ -1,0 +1,268 @@
+{
+  "dataset": {
+    "name": "Lending Club personal loans 2007-2011",
+    "loans": 42493,
+    "defaultRate": 0.1512,
+    "trainLoans": 33811,
+    "testLoans": 8682,
+    "testDefaultRate": 0.1608,
+    "testPeriodStart": "2011-09"
+  },
+  "thresholds": {
+    "approvePd": 0.12,
+    "declinePd": 0.22,
+    "ruleBasedDeclineFlags": 2
+  },
+  "models": {
+    "Always approve": {
+      "rocAuc": 0.5,
+      "prAuc": 0.1608,
+      "ks": 0.0,
+      "brier": null,
+      "gini": 0.0,
+      "accuracy": 0.8392,
+      "precision": 0.0,
+      "recall": 0.0,
+      "f1": 0.0,
+      "flaggedShare": 0.0,
+      "confusion": {
+        "tp": 0,
+        "fp": 0,
+        "fn": 1396,
+        "tn": 7286
+      }
+    },
+    "Rule-based": {
+      "rocAuc": 0.6552,
+      "prAuc": 0.2502,
+      "ks": 0.2454,
+      "brier": null,
+      "gini": 0.3104,
+      "accuracy": 0.7703,
+      "precision": 0.2689,
+      "recall": 0.2493,
+      "f1": 0.2587,
+      "flaggedShare": 0.149,
+      "confusion": {
+        "tp": 348,
+        "fp": 946,
+        "fn": 1048,
+        "tn": 6340
+      }
+    },
+    "Logistic Regression": {
+      "rocAuc": 0.6896,
+      "prAuc": 0.294,
+      "ks": 0.2862,
+      "brier": 0.1267,
+      "gini": 0.3792,
+      "accuracy": 0.7797,
+      "precision": 0.3206,
+      "recall": 0.3309,
+      "f1": 0.3257,
+      "flaggedShare": 0.166,
+      "confusion": {
+        "tp": 462,
+        "fp": 979,
+        "fn": 934,
+        "tn": 6307
+      }
+    },
+    "Random Forest": {
+      "rocAuc": 0.6758,
+      "prAuc": 0.2739,
+      "ks": 0.2671,
+      "brier": 0.128,
+      "gini": 0.3516,
+      "accuracy": 0.7611,
+      "precision": 0.3024,
+      "recall": 0.3718,
+      "f1": 0.3335,
+      "flaggedShare": 0.1977,
+      "confusion": {
+        "tp": 519,
+        "fp": 1197,
+        "fn": 877,
+        "tn": 6089
+      }
+    },
+    "Gradient Boosting (proposed)": {
+      "rocAuc": 0.6903,
+      "prAuc": 0.2872,
+      "ks": 0.2905,
+      "brier": 0.1269,
+      "gini": 0.3806,
+      "accuracy": 0.7709,
+      "precision": 0.3122,
+      "recall": 0.3532,
+      "f1": 0.3314,
+      "flaggedShare": 0.1819,
+      "confusion": {
+        "tp": 493,
+        "fp": 1086,
+        "fn": 903,
+        "tn": 6200
+      }
+    }
+  },
+  "decisionOutcomes": [
+    {
+      "decision": "Auto-approve",
+      "share": 0.4247,
+      "defaultRate": 0.0792,
+      "loans": 3687
+    },
+    {
+      "decision": "Manual review",
+      "share": 0.3935,
+      "defaultRate": 0.1789,
+      "loans": 3416
+    },
+    {
+      "decision": "Decline",
+      "share": 0.1819,
+      "defaultRate": 0.3122,
+      "loans": 1579
+    }
+  ],
+  "riskBands": [
+    {
+      "band": "Very low",
+      "share": 0.1475,
+      "predicted": 0.0503,
+      "actual": 0.0476
+    },
+    {
+      "band": "Low",
+      "share": 0.2771,
+      "predicted": 0.0977,
+      "actual": 0.096
+    },
+    {
+      "band": "Medium",
+      "share": 0.3375,
+      "predicted": 0.1562,
+      "actual": 0.1652
+    },
+    {
+      "band": "High",
+      "share": 0.2042,
+      "predicted": 0.2437,
+      "actual": 0.2871
+    },
+    {
+      "band": "Very high",
+      "share": 0.0336,
+      "predicted": 0.3407,
+      "actual": 0.3801
+    }
+  ],
+  "calibrationByDecile": [
+    {
+      "d": 0.0,
+      "predicted": 0.0443,
+      "actual": 0.0345
+    },
+    {
+      "d": 1.0,
+      "predicted": 0.0704,
+      "actual": 0.0853
+    },
+    {
+      "d": 2.0,
+      "predicted": 0.0931,
+      "actual": 0.0933
+    },
+    {
+      "d": 3.0,
+      "predicted": 0.1081,
+      "actual": 0.0991
+    },
+    {
+      "d": 4.0,
+      "predicted": 0.1246,
+      "actual": 0.1267
+    },
+    {
+      "d": 5.0,
+      "predicted": 0.1436,
+      "actual": 0.1429
+    },
+    {
+      "d": 6.0,
+      "predicted": 0.1688,
+      "actual": 0.1797
+    },
+    {
+      "d": 7.0,
+      "predicted": 0.1974,
+      "actual": 0.2316
+    },
+    {
+      "d": 8.0,
+      "predicted": 0.235,
+      "actual": 0.2615
+    },
+    {
+      "d": 9.0,
+      "predicted": 0.2989,
+      "actual": 0.3533
+    }
+  ],
+  "permutationImportance": [
+    {
+      "feature": "tenure_months",
+      "label": "Loan tenure",
+      "aucDrop": 0.0861,
+      "std": 0.0053
+    },
+    {
+      "feature": "credit_score",
+      "label": "Credit score",
+      "aucDrop": 0.0627,
+      "std": 0.0062
+    },
+    {
+      "feature": "purpose",
+      "label": "Loan purpose",
+      "aucDrop": 0.0186,
+      "std": 0.002
+    },
+    {
+      "feature": "credit_applications_6m",
+      "label": "Recent credit applications",
+      "aucDrop": 0.0098,
+      "std": 0.0031
+    },
+    {
+      "feature": "residence",
+      "label": "Residence type",
+      "aucDrop": 0.0023,
+      "std": 0.0004
+    },
+    {
+      "feature": "credit_history_years",
+      "label": "Length of credit history",
+      "aucDrop": 0.0022,
+      "std": 0.0005
+    },
+    {
+      "feature": "existing_debt_to_income",
+      "label": "Existing EMIs vs income",
+      "aucDrop": 0.0015,
+      "std": 0.0008
+    },
+    {
+      "feature": "years_employed",
+      "label": "Years in current job/business",
+      "aucDrop": 0.0002,
+      "std": 0.0001
+    },
+    {
+      "feature": "missed_payments_2y",
+      "label": "Missed payments (last 2 years)",
+      "aucDrop": -0.0,
+      "std": 0.0001
+    }
+  ]
+}

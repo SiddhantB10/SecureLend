@@ -51,3 +51,18 @@ exports.setupAdmin = async (req, res) => {
     return res.status(500).json({ message: 'Failed to create admin', error: error.message });
   }
 };
+
+exports.getAuditLogs = async (req, res) => {
+  try {
+    const AdminAuditLog = require('../database/models/admin/AdminAuditLog');
+    const limit = Math.min(Number(req.query.limit) || 100, 500);
+    const logs = await AdminAuditLog.find()
+      .sort({ createdAt: -1 })
+      .limit(limit)
+      .populate('adminUserId', 'name email')
+      .lean();
+    return res.json({ logs });
+  } catch (error) {
+    return res.status(500).json({ message: 'Unable to load audit logs' });
+  }
+};

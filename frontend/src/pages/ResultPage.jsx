@@ -1,128 +1,81 @@
-import { useMemo } from 'react';
-import { Link, useLocation, useNavigate } from 'react-router-dom';
-import { ArrowLeft, FileText } from 'lucide-react';
+import { useEffect, useState } from 'react';
+import { Link, useLocation, useParams } from 'react-router-dom';
+import { ArrowLeft } from 'lucide-react';
+import api from '../api/client';
 import AppShell from '../components/AppShell';
-import RiskMeter from '../components/RiskMeter';
-import SectionHeading from '../components/SectionHeading';
+import AssessmentView from '../components/AssessmentView';
+import StatusBadge from '../components/StatusBadge';
 import { formatInr } from '../utils/formatters';
 
-const ResultPage = () => {
-  const location = useLocation();
-  const navigate = useNavigate();
-  const result = useMemo(() => {
-    if (location.state) return location.state;
-    try {
-      return JSON.parse(localStorage.getItem('securelend:lastResult') || 'null');
-    } catch {
-      return null;
-    }
-  }, [location.state]);
-
-  const loan = result?.loan;
-  const prediction = result?.prediction;
-
-  const featureImportance = useMemo(() => prediction?.featureImportance || [], [prediction]);
-
-  if (!loan || !prediction) {
-    return (
-      <AppShell title="Application result" subtitle="No application result was found in the current session.">
-        <div className="rounded-3xl border border-gray-200 bg-gray-50 p-8 shadow-glow">
-          <p className="text-gray-600">Submit a loan application to view your assessment summary here.</p>
-          <div className="mt-6 flex gap-3">
-            <button
-              type="button"
-              onClick={() => navigate('/apply')}
-              className="rounded-full bg-neon-500 px-5 py-3 font-semibold text-white"
-            >
-              Back to application
-            </button>
-            <Link to="/dashboard" className="rounded-full border border-gray-300 px-5 py-3 font-semibold text-gray-700">
-              Dashboard
-            </Link>
-          </div>
-        </div>
-      </AppShell>
-    );
+const readStoredResult = () => {
+  try {
+    return JSON.parse(localStorage.getItem('securelend:lastResult') || 'null')?.loan || null;
+  } catch {
+    return null;
   }
+};
+
+/** Applications made before the new assessment engine have no detailed report. */
+const LegacyResult = ({ loan }) => (
+  <div className="rounded-3xl border border-gray-200 bg-gray-50 p-6 shadow-glow">
+    <div className="flex items-center gap-3">
+      <StatusBadge value={loan.status} />
+      <span className="text-sm text-gray-600">Submitted with the previous application form</span>
+    </div>
+    <p className="mt-4 text-sm leading-6 text-gray-700">{loan.explanation || 'No detailed explanation is available for this older application.'}</p>
+    <p className="mt-2 text-sm text-gray-600">
+      Amount {formatInr(loan.loanAmount)} · Risk score {Math.round((loan.riskScore || 0) * 100)}% ({loan.riskCategory})
+    </p>
+  </div>
+);
+
+const ResultPage = () => {
+  const { id } = useParams();
+  const location = useLocation();
+  const [loan, setLoan] = useState(() => location.state?.loan || (id ? null : readStoredResult()));
+  const [loading, setLoading] = useState(Boolean(id) && !location.state?.loan);
+  const [error, setError] = useState('');
+
+  useEffect(() => {
+    if (!id) return;
+    let cancelled = false;
+    // Always refresh from the server so a decision made later by a loan officer is shown.
+    api
+      .get(`/loan/${id}`)
+      .then(({ data }) => !cancelled && setLoan(data.loan))
+      .catch((err) => !cancelled && setError(err.response?.data?.message || 'Unable to load this application'))
+      .finally(() => !cancelled && setLoading(false));
+    return () => {
+      cancelled = true;
+    };
+  }, [id]);
 
   return (
     <AppShell
-      title="Assessment result"
-      subtitle="Review your application score, summary details, and current decision status."
+      title="Your loan decision"
+      subtitle="The decision, the reasons behind it, and what you can do next."
       actions={
         <Link to="/dashboard" className="inline-flex items-center gap-2 rounded-full border border-gray-300 px-4 py-2 text-sm text-gray-700 hover:border-neon-500/40 hover:text-neon-500">
           <ArrowLeft className="h-4 w-4" />Back to dashboard
         </Link>
       }
     >
-      <div className="grid gap-6 xl:grid-cols-[0.9fr_1.1fr]">
-        <RiskMeter score={prediction.riskScore} category={prediction.category} />
-
-        <div className="rounded-3xl border border-gray-200 bg-gray-50 p-6 shadow-glow">
-          <SectionHeading eyebrow="Assessment notes" title="Decision summary" subtitle="The text below highlights the main factors considered in this application." />
-          <div className="mt-6 rounded-2xl border border-gray-200 bg-white p-5 text-sm leading-7 text-gray-700">
-            {prediction.explanation}
-          </div>
-          <div className="mt-5 grid gap-3 sm:grid-cols-2">
-            {featureImportance.slice(0, 4).map((item) => (
-              <div key={item.feature} className="rounded-2xl border border-gray-200 bg-gray-100 p-4">
-                <p className="text-xs uppercase tracking-[0.25em] text-gray-600">{item.feature}</p>
-                <p className="mt-2 text-lg font-semibold text-neon-500">{item.importance}</p>
-              </div>
-            ))}
-          </div>
-          <div className="mt-5 grid gap-3 sm:grid-cols-3">
-            {[
-              ['Loan type', prediction.loanType || loan.loanType || 'personal'],
-              ['System score', prediction.mlScore ?? loan.mlRiskScore ?? 'N/A'],
-              ['Policy score', prediction.formulaScore ?? loan.formulaRiskScore ?? 'N/A'],
-            ].map(([label, value]) => (
-              <div key={label} className="rounded-2xl border border-gray-200 bg-gray-100 p-4">
-                <p className="text-xs uppercase tracking-[0.25em] text-gray-600">{label}</p>
-                <p className="mt-2 text-lg font-semibold text-neon-500">{typeof value === 'number' ? value.toFixed(4) : value}</p>
-              </div>
-            ))}
-          </div>
+      {loading && !loan ? (
+        <div className="rounded-3xl border border-gray-200 bg-gray-50 p-8 text-gray-600">Loading your decision…</div>
+      ) : error && !loan ? (
+        <div className="rounded-3xl border border-red-200 bg-red-50 p-8 text-red-700">{error}</div>
+      ) : !loan ? (
+        <div className="rounded-3xl border border-gray-200 bg-gray-50 p-8 shadow-glow">
+          <p className="text-gray-600">Submit a loan application to see your decision here.</p>
+          <Link to="/apply" className="mt-6 inline-block rounded-full bg-neon-500 px-5 py-3 font-semibold text-white">
+            Apply now
+          </Link>
         </div>
-      </div>
-
-      <div className="mt-6 rounded-3xl border border-gray-200 bg-gray-50 p-6 shadow-glow">
-        <div className="flex items-center gap-2 text-neon-500">
-          <FileText className="h-5 w-5" />
-          <p className="text-xs uppercase tracking-[0.35em]">Stored application</p>
-        </div>
-        <div className="mt-5 grid gap-4 md:grid-cols-2 xl:grid-cols-4">
-          {[
-            ['Applicant', loan.personalInfo?.name || 'N/A'],
-            ['Income', formatInr(loan.income)],
-            ['Credit score', loan.creditScore],
-            ['Loan amount', formatInr(loan.loanAmount)],
-            ['Loan type', loan.loanType || prediction.loanType || 'personal'],
-            ['Decision', `${loan.status?.toUpperCase()} (${loan.decisionSource === 'admin' ? 'Admin' : 'AI'})`],
-            ['Assessment engine', loan.aiModel || 'random_forest'],
-          ].map(([label, value]) => (
-            <div key={label} className="rounded-2xl border border-gray-200 bg-gray-100 p-4">
-              <p className="text-xs uppercase tracking-[0.25em] text-gray-600">{label}</p>
-              <p className="mt-2 text-base font-semibold text-gray-900">{value}</p>
-            </div>
-          ))}
-          <div className="rounded-2xl border border-gray-200 bg-gray-100 p-4">
-            <p className="text-xs uppercase tracking-[0.25em] text-gray-600">Blockchain tx id</p>
-            {loan.blockchainTxHash ? (
-              <a
-                href={`https://hashscan.io/testnet/transaction/${loan.blockchainTxHash}`}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="mt-2 block break-all font-mono text-sm font-semibold text-neon-500 underline hover:text-neon-400"
-              >
-                {loan.blockchainTxHash}
-              </a>
-            ) : (
-              <p className="mt-2 text-base font-semibold text-gray-900">Not recorded yet</p>
-            )}
-          </div>
-        </div>
-      </div>
+      ) : loan.assessment?.headline ? (
+        <AssessmentView loan={loan} />
+      ) : (
+        <LegacyResult loan={loan} />
+      )}
     </AppShell>
   );
 };

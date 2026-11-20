@@ -1,0 +1,22 @@
+{
+  "personal": {
+    "credit_score": 712.0,
+    "existing_debt_to_income": 13.31,
+    "tenure_months": 36.0,
+    "years_employed": 4.0,
+    "missed_payments_2y": 0.0,
+    "credit_applications_6m": 1.0,
+    "credit_history_years": 12.503764544832306,
+    "residence": "rented",
+    "purpose": "debt_consolidation"
+  },
+  "property": {
+    "credit_score": 712.0,
+    "existing_debt_to_income": 13.31,
+    "years_employed": 4.0,
+    "missed_payments_2y": 0.0,
+    "credit_applications_6m": 1.0,
+    "credit_history_years": 12.503764544832306,
+    "residence": "rented"
+  }
+}

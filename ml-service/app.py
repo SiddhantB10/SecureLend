@@ -1,86 +1,97 @@
+"""SecureLend ML service: probability-of-default scoring with per-applicant explanations."""
+
 from __future__ import annotations
 
+import json
 import os
 from pathlib import Path
+from typing import Literal
 
 import joblib
+import pandas as pd
 from dotenv import load_dotenv
 from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel, ConfigDict, Field
 
-from model_utils import build_explanation, engineer_features, top_feature_importances
-from training.train_model import train_and_save_models
+from model_utils import (
+    BORROWER_CATEGORICAL,
+    BORROWER_NUMERIC,
+    FEATURE_LABELS,
+    FULL_CATEGORICAL,
+    FULL_NUMERIC,
+    describe_value,
+    features_from_application,
+)
 
 BASE_DIR = Path(__file__).resolve().parent
-MODEL_DIR = BASE_DIR / 'models'
-RF_MODEL_PATH = MODEL_DIR / 'random_forest.pkl'
-LOGREG_MODEL_PATH = MODEL_DIR / 'logistic_regression.pkl'
+MODEL_DIR = Path(os.getenv('MODEL_DIR', BASE_DIR / 'models'))
+if not MODEL_DIR.is_absolute():
+    MODEL_DIR = (BASE_DIR / MODEL_DIR).resolve()
 
 load_dotenv()
 
-
-def parse_allowed_origins() -> list[str]:
-    origins_raw = os.getenv('CORS_ORIGINS', '')
-    return [origin.strip() for origin in origins_raw.split(',') if origin.strip()]
-
-app = FastAPI(title='SecureLend ML Service', version='1.0.0')
-
-allowed_origins = parse_allowed_origins() or ['*']
-
+app = FastAPI(title='SecureLend ML Service', version='2.0.0')
+allowed_origins = [o.strip() for o in os.getenv('CORS_ORIGINS', '').split(',') if o.strip()] or ['*']
 app.add_middleware(
     CORSMiddleware,
     allow_origins=allowed_origins,
-    allow_credentials=True,
+    allow_credentials=allowed_origins != ['*'],
     allow_methods=['*'],
     allow_headers=['*'],
 )
+
+_state: dict = {}
+
+
+def load_artifacts() -> dict:
+    if _state:
+        return _state
+    required = ['credit_risk_personal.pkl', 'credit_risk_property.pkl', 'anomaly_detector.pkl', 'metrics.json', 'reference_profiles.json']
+    if not all((MODEL_DIR / name).exists() for name in required):
+        from training.train_model import train_and_save_models
+
+        train_and_save_models(MODEL_DIR)
+
+    _state['models'] = {
+        'personal': joblib.load(MODEL_DIR / 'credit_risk_personal.pkl'),
+        'property': joblib.load(MODEL_DIR / 'credit_risk_property.pkl'),
+    }
+    _state['anomaly'] = joblib.load(MODEL_DIR / 'anomaly_detector.pkl')
+    _state['metrics'] = json.loads((MODEL_DIR / 'metrics.json').read_text())
+    _state['reference'] = json.loads((MODEL_DIR / 'reference_profiles.json').read_text())
+    return _state
 
 
 class PredictionRequest(BaseModel):
     model_config = ConfigDict(extra='ignore')
 
-    loanType: str = Field(default='personal')
-    income: float = Field(ge=0)
-    creditScore: float = Field(ge=0)
-    loanAmount: float = Field(ge=0)
-    existingDebt: float = Field(ge=0)
-    propertyValue: float | None = Field(default=None, ge=0)
-    employmentStatus: str | None = Field(default='stable')
-    formulaScore: float | None = Field(default=None, ge=0)
+    loanType: Literal['personal', 'property'] = 'personal'
+    creditScore: float = Field(ge=300, le=900, description='CIBIL score (300-900)')
+    monthlyIncome: float = Field(gt=0, description='Net monthly income')
+    existingEmi: float = Field(default=0, ge=0)
+    loanAmount: float = Field(gt=0)
+    tenureMonths: int = Field(ge=1, le=480)
+    newEmi: float | None = Field(default=None, ge=0)
+    interestRate: float | None = Field(default=None, ge=0, le=60)
+    yearsEmployed: float = Field(default=0, ge=0, le=60)
+    residenceType: str = 'rented'
+    purpose: str = 'other'
+    missedPayments: int = Field(default=0, ge=0, le=100)
+    recentCreditApplications: int = Field(default=0, ge=0, le=100)
+    creditHistoryYears: float = Field(default=0, ge=0, le=80)
 
 
-class PredictionResponse(BaseModel):
-    loanType: str
-    mlScore: float
-    explanation: str
-    featureImportance: list[dict[str, float | str]]
-    baselineRiskScore: float
-    model: str
-    riskScore: float
-
-
-rf_pipeline = None
-logreg_pipeline = None
+def risk_band(pd_value: float, bands: list[dict]) -> str:
+    for band in bands:
+        if band['min'] <= pd_value < band['max'] or (band['max'] >= 1.0 and pd_value >= band['min']):
+            return band['band']
+    return bands[-1]['band']
 
 
 @app.get('/')
 def root() -> dict[str, str]:
-    return {'message': 'SecureLend ML service is running', 'health': '/health', 'predict': '/predict'}
-
-
-def load_models() -> tuple[object, object]:
-    global rf_pipeline, logreg_pipeline
-
-    if rf_pipeline is not None and logreg_pipeline is not None:
-        return rf_pipeline, logreg_pipeline
-
-    if not RF_MODEL_PATH.exists() or not LOGREG_MODEL_PATH.exists():
-        train_and_save_models(MODEL_DIR)
-
-    rf_pipeline = joblib.load(RF_MODEL_PATH)
-    logreg_pipeline = joblib.load(LOGREG_MODEL_PATH)
-    return rf_pipeline, logreg_pipeline
+    return {'message': 'SecureLend ML service is running', 'health': '/health', 'predict': '/predict', 'modelInfo': '/model-info'}
 
 
 @app.get('/health')
@@ -88,33 +99,69 @@ def health() -> dict[str, str]:
     return {'status': 'ok', 'service': 'securelend-ml'}
 
 
-@app.post('/predict', response_model=PredictionResponse)
-def predict(request: PredictionRequest) -> dict[str, object]:
+@app.get('/model-info')
+def model_info() -> dict:
+    return load_artifacts()['metrics']
+
+
+@app.post('/predict')
+def predict(request: PredictionRequest) -> dict:
     try:
-        rf, logreg = load_models()
-        feature_bundle = engineer_features(request.model_dump())
+        state = load_artifacts()
+        payload = request.model_dump()
+        loan_type = payload['loanType']
+        row = features_from_application(payload)
 
-        ml_score = float(rf.predict_proba(feature_bundle.frame)[0][1])
-        baseline_score = float(logreg.predict_proba(feature_bundle.frame)[0][1])
+        numeric, categorical = (FULL_NUMERIC, FULL_CATEGORICAL) if loan_type == 'personal' else (BORROWER_NUMERIC, BORROWER_CATEGORICAL)
+        columns = numeric + categorical
+        model = state['models'][loan_type]
+        reference = state['reference'][loan_type]
 
-        preprocessor = rf.named_steps['preprocessor']
-        classifier = rf.named_steps['classifier']
-        transformed_feature_names = list(preprocessor.get_feature_names_out())
-        feature_importance = top_feature_importances(
-            transformed_feature_names,
-            list(classifier.feature_importances_),
-        )
+        # Row 0 = applicant; row i = applicant with feature i set to a typical repaid borrower's value.
+        rows = [{c: row[c] for c in columns}]
+        for column in columns:
+            variant = dict(rows[0])
+            variant[column] = reference[column]
+            rows.append(variant)
+        probabilities = model.predict_proba(pd.DataFrame(rows, columns=columns))[:, 1]
+        pd_value = float(probabilities[0])
 
-        explanation = build_explanation(feature_importance, feature_bundle.engineered, ml_score)
+        contributions = []
+        for i, column in enumerate(columns, start=1):
+            impact = pd_value - float(probabilities[i])
+            contributions.append(
+                {
+                    'feature': column,
+                    'label': FEATURE_LABELS[column],
+                    'value': describe_value(column, row[column]),
+                    'typicalValue': describe_value(column, reference[column]),
+                    'impact': round(impact, 4),  # + raises default probability, - lowers it
+                    'direction': 'increases_risk' if impact > 0.002 else ('decreases_risk' if impact < -0.002 else 'neutral'),
+                }
+            )
+        contributions.sort(key=lambda item: abs(item['impact']), reverse=True)
 
+        anomaly = state['anomaly'][loan_type]
+        anomaly_frame = pd.DataFrame([{c: row[c] for c in anomaly['columns']}])
+        anomaly_score = float(anomaly['pipeline'].decision_function(anomaly_frame)[0])
+        is_anomalous = bool(anomaly['pipeline'].predict(anomaly_frame)[0] == -1)
+
+        metrics = state['metrics']
+        variant_metrics = metrics[loan_type]
         return {
-            'loanType': feature_bundle.engineered['loanType'],
-            'mlScore': round(ml_score, 4),
-            'explanation': explanation,
-            'featureImportance': feature_importance,
-            'baselineRiskScore': round(baseline_score, 4),
-            'model': 'random_forest',
-            'riskScore': round(ml_score, 4),
+            'loanType': loan_type,
+            'probabilityOfDefault': round(pd_value, 4),
+            'riskBand': risk_band(pd_value, metrics['riskBands']),
+            'contributions': contributions,
+            'anomaly': {'isAnomalous': is_anomalous, 'score': round(anomaly_score, 4)},
+            'model': {
+                'name': variant_metrics['selectedModel'],
+                'version': metrics['modelVersion'],
+                'rocAuc': variant_metrics['test']['rocAuc'],
+                'trainedOn': metrics['dataset']['name'],
+            },
         }
-    except Exception as error:
+    except HTTPException:
+        raise
+    except Exception as error:  # pragma: no cover - defensive
         raise HTTPException(status_code=500, detail=f'Prediction failed: {error}') from error

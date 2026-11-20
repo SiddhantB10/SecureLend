@@ -1,28 +1,28 @@
 import { motion } from 'framer-motion';
-import { ArrowRight, ShieldCheck, BrainCircuit, Link2, BarChart3, Sparkles } from 'lucide-react';
+import { ArrowRight, ShieldCheck, BrainCircuit, Link2, BarChart3 } from 'lucide-react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 
 const features = [
   {
     icon: BrainCircuit,
-    title: 'Smart eligibility checks',
-    text: 'Each application is assessed consistently using verified financial and profile inputs.',
+    title: 'Credit-risk model on real outcomes',
+    text: 'A calibrated default-risk model trained on 42,000+ real loans with known repayment outcomes, plus RBI loan-to-value and FOIR affordability rules.',
   },
   {
-    icon: Link2,
-    title: 'Secure decision records',
-    text: 'Application outcomes are stored with traceable records for transparency and accountability.',
+    icon: ShieldCheck,
+    title: 'Fraud & identity checks',
+    text: 'PAN validation, PAN–name matching, duplicate identities, application velocity, inconsistent data and anomaly detection on every application.',
   },
   {
     icon: BarChart3,
-    title: 'Application insights',
-    text: 'Track approvals, pending cases, and overall lending activity in one view.',
+    title: 'Clear reasons, every time',
+    text: 'Every decision explains why — what counted against you, what helped, and exactly what to do to improve.',
   },
   {
-    icon: Sparkles,
-    title: 'Designed for customers',
-    text: 'A fast, responsive dark interface with subtle motion and premium data cards.',
+    icon: Link2,
+    title: 'Tamper-proof audit trail',
+    text: 'Final decisions are written to the Hedera blockchain so they cannot be altered after the fact.',
   },
 ];
 
@@ -126,15 +126,15 @@ const LandingPage = () => {
                 <p className="text-sm text-gray-600">Assessment status</p>
                 <div className="mt-2 text-4xl font-semibold text-neon-500">Ready</div>
                 <p className="mt-3 text-sm leading-6 text-gray-600">
-                  Submit a loan application to generate a live score, decision summary, and stored review record.
+                  Apply in about 3 minutes and get an instant decision — approved, sent for review, or declined — with the reasons behind it.
                 </p>
               </div>
               <div className="mt-6 grid gap-3 sm:grid-cols-2">
                 {[
-                  ['Application intake', 'Captured in the form flow'],
-                  ['Risk scoring', 'Computed from submitted data'],
-                  ['Manual review', 'Triggered when needed'],
-                  ['Record keeping', 'Saved for account history'],
+                  ['Identity & fraud', '9 automated checks'],
+                  ['Default risk', 'ML model, out-of-time AUC 0.69'],
+                  ['Affordability', 'FOIR + RBI LTV rules'],
+                  ['Decision', 'Instant, with reasons'],
                 ].map(([label, value]) => (
                   <div key={label} className="rounded-2xl border border-gray-200 bg-gray-50 p-4">
                     <p className="text-xs uppercase tracking-[0.25em] text-gray-500">{label}</p>

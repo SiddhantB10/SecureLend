@@ -9,6 +9,28 @@ SecureLend is a full-stack AI-powered lending risk platform with:
 
 This repository is now configured to deploy with that exact architecture.
 
+## How a loan decision is made
+
+Every application goes through three layers, and the applicant sees the reasons for each:
+
+1. **Identity & fraud checks** (`backend/services/decisionEngine.js`): PAN format (individual
+   PAN), PAN 5th letter vs surname, PAN already used by another account, applicant name vs account
+   holder, applications in the last 24 h (velocity), income or credit-score changes within 30 days,
+   age vs years employed / credit history, and an ML anomaly detector.
+2. **Lending policy** (`backend/services/lendingPolicy.js`): minimum age 21 and maximum age at
+   loan end, regular income, minimum income, CIBIL floor (600, with 600–649 reviewed), missed
+   payments, FOIR (all EMIs ≤ 50% comfortable, > 60% declined), and RBI loan-to-value caps for
+   property loans (90% / 80% / 75%).
+3. **Credit-risk model** (`ml-service/`): calibrated probability of default from monotonic
+   gradient boosting trained on **42,493 real loans with known outcomes** (out-of-time ROC-AUC
+   0.69). It sets the risk band and a risk-based interest rate. Full details are in
+   [`ml-service/MODEL_CARD.md`](ml-service/MODEL_CARD.md).
+
+Outcome: **approved** (with the offer, EMI and total interest), **sent for manual review** (an
+officer decides from the admin dashboard and adds a note the applicant sees), or **declined**. Each
+outcome comes with plain-language reasons, what counted in the applicant's favour, a counter-offer
+when they can afford a smaller loan, and concrete steps to improve.
+
 ## Full Deployment Walkthrough
 
 For a complete beginner-friendly, copy-paste deployment playbook (including exact env variables and India-specific recommendations), use:
@@ -60,7 +82,7 @@ Use either:
 
 Service settings:
 - Root Directory: `ml-service`
-- Build Command: `pip install -r requirements.txt`
+- Build Command: `pip install -r requirements.txt && python training/train_model.py`
 - Start Command: `uvicorn app:app --host 0.0.0.0 --port $PORT`
 - Health Check Path: `/health`
 
@@ -71,7 +93,7 @@ PYTHON_VERSION=3.11.9
 CORS_ORIGINS=https://your-backend.onrender.com
 ```
 
-Model files are committed in `ml-service/models/`, so retraining in the build step is unnecessary and can slow down free-tier deploys.
+Model files (`*.pkl`) are git-ignored, so the build step trains them from the real dataset in `ml-service/data/` (about 20 seconds). If the service ever starts without models, it trains them on first request.
 
 ## 4) Deploy Backend API on Render
 
@@ -167,7 +189,11 @@ npm run dev
 
 - `POST /signup`
 - `POST /login`
-- `POST /apply-loan`
+- `POST /apply-loan`: body fields `loanType, loanAmount, tenureMonths, purpose | propertyValue, fullName, dateOfBirth, pan, employmentType, monthlyIncome, yearsEmployed, existingEmi, residenceType, noCreditHistory, creditScore, missedPayments, recentCreditApplications, creditHistoryYears`. Returns the loan with its full `assessment`.
 - `GET /my-loans`
-- `GET /all-loans`
-- `PUT /loan/:id/status`
+- `GET /loan/:id` (owner or admin)
+- `GET /all-loans` (admin)
+- `PUT /loan/:id/status` (admin; `status`, optional `adminNotes`)
+- `GET /model-info`: model metrics (proxied from the ML service)
+- `GET /admin/audit-logs` (admin): admin sign-ins and manual decisions, newest first
+- ML service: `POST /predict`, `GET /model-info`, `GET /health`

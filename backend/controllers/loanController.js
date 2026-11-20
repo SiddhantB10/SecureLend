@@ -1,183 +1,185 @@
+const crypto = require('crypto');
 const mongoose = require('mongoose');
 const Loan = require('../models/Loan');
-const { predictLoanRisk } = require('../services/mlService');
+const User = require('../models/User');
+const { predictLoanRisk, getModelInfo } = require('../services/mlService');
+const { scoreWithFallback } = require('../services/scorecardFallback');
 const { recordLoanDecision } = require('../services/blockchainService');
-const { clampRiskScore, computeFormulaScore } = require('../services/riskScoringService');
+const { logAdminAction } = require('../services/auditLogService');
+const { assessApplication } = require('../services/decisionEngine');
+const { PRODUCTS, riskCategoryFor, emi } = require('../services/lendingPolicy');
 
-const parseNumber = (value, fallback = 0) => {
-  const parsed = Number(value);
-  return Number.isFinite(parsed) ? parsed : fallback;
-};
+const PAN_HASH_SECRET = () => process.env.PAN_HASH_SECRET || process.env.JWT_SECRET || 'securelend';
+const hashPan = (pan) => crypto.createHmac('sha256', PAN_HASH_SECRET()).update(pan).digest('hex');
+const maskPan = (pan) => `${pan.slice(0, 5)}****${pan.slice(-1)}`;
 
-const buildApplicantPayload = (body) => ({
-  loanType: body.loanType,
-  income: parseNumber(body.income),
-  creditScore: parseNumber(body.creditScore),
-  loanAmount: parseNumber(body.loanAmount),
-  existingDebt: parseNumber(body.existingDebt),
-  propertyValue: parseNumber(body.propertyValue),
-  employment: body.employmentStatus || body.employment,
-  employmentStatus: body.employmentStatus || body.employment,
-});
-
-const determineCategory = (riskScore) => {
-  if (riskScore < 0.3) {
-    return 'Low';
-  }
-
-  if (riskScore <= 0.7) {
-    return 'Medium';
-  }
-
-  return 'High';
-};
-
-const determineAiDecision = (riskScore) => {
-  if (riskScore < 0.3) {
-    return {
-      status: 'approved',
-      reason: 'Auto-approved by AI because risk is below 0.30.',
-    };
-  }
-
-  if (riskScore <= 0.7) {
-    return {
-      status: 'review',
-      reason: 'Sent to admin for manual decision because risk is between 0.30 and 0.70.',
-    };
-  }
-
+const buildInput = (body) => {
+  const noCreditHistory = body.noCreditHistory === true;
+  const employmentType = body.employmentType;
   return {
-    status: 'rejected',
-    reason: 'Auto-rejected by AI because risk is above 0.70.',
+    loanType: body.loanType,
+    fullName: String(body.fullName).trim(),
+    dateOfBirth: body.dateOfBirth,
+    pan: String(body.pan).trim().toUpperCase(),
+    employmentType,
+    monthlyIncome: Number(body.monthlyIncome),
+    // Retired applicants have no "current job"; a neutral value keeps the model input sensible.
+    yearsEmployed: employmentType === 'retired' ? 5 : Number(body.yearsEmployed || 0),
+    existingEmi: Number(body.existingEmi || 0),
+    residenceType: body.residenceType,
+    noCreditHistory,
+    creditScore: noCreditHistory ? null : Number(body.creditScore),
+    missedPayments: noCreditHistory ? 0 : Number(body.missedPayments || 0),
+    recentCreditApplications: noCreditHistory ? 0 : Number(body.recentCreditApplications || 0),
+    creditHistoryYears: noCreditHistory ? 0 : Number(body.creditHistoryYears || 0),
+    loanAmount: Number(body.loanAmount),
+    tenureMonths: Number(body.tenureMonths),
+    purpose: body.loanType === 'personal' ? body.purpose : 'property',
+    propertyValue: body.loanType === 'property' ? Number(body.propertyValue) : 0,
   };
+};
+
+const scoreApplication = async (input) => {
+  const product = PRODUCTS[input.loanType];
+  const payload = {
+    loanType: input.loanType,
+    // Applicants without credit history cannot be scored; a neutral score is sent only so the
+    // service returns anomaly/explanation data — the decision engine routes them to review.
+    creditScore: input.noCreditHistory ? 650 : input.creditScore,
+    monthlyIncome: Math.max(input.monthlyIncome, 1),
+    existingEmi: input.existingEmi,
+    loanAmount: input.loanAmount,
+    tenureMonths: input.tenureMonths,
+    newEmi: emi(input.loanAmount, product.baseRate + 2.5, input.tenureMonths),
+    yearsEmployed: Math.min(input.yearsEmployed, 60),
+    residenceType: input.residenceType,
+    purpose: input.loanType === 'personal' ? input.purpose : 'other',
+    missedPayments: input.missedPayments,
+    recentCreditApplications: input.recentCreditApplications,
+    creditHistoryYears: input.creditHistoryYears,
+  };
+
+  try {
+    return { ...(await predictLoanRisk(payload)), source: 'ml-service' };
+  } catch (error) {
+    console.error('ML service unavailable, using scorecard fallback:', error.message);
+    return { ...scoreWithFallback(payload), source: 'scorecard-fallback' };
+  }
+};
+
+const recordOnChain = async (loan) => {
+  try {
+    const chainResult = await recordLoanDecision({
+      loanId: loan._id.toString(),
+      loanType: loan.loanType,
+      riskScore: loan.riskScore,
+      decision: loan.status,
+    });
+    if (chainResult.blockchainEnabled) {
+      loan.blockchainRecorded = true;
+      loan.blockchainTxHash = chainResult.txHash;
+      await loan.save();
+    }
+    return chainResult;
+  } catch (error) {
+    console.error('Blockchain logging failed:', error.message);
+    return { blockchainEnabled: false, error: error.message };
+  }
 };
 
 exports.applyLoan = async (req, res) => {
   try {
-    const applicantPayload = buildApplicantPayload(req.body);
-    const formulaBundle = computeFormulaScore(applicantPayload);
+    const input = buildInput(req.body);
+    const panHash = hashPan(input.pan);
 
-    let prediction;
-    let mlAvailable = true;
-    let mlWarning = '';
+    const [account, panOwner, recentApplications] = await Promise.all([
+      User.findById(req.user.id).lean(),
+      Loan.findOne({ 'applicant.panHash': panHash, userId: { $ne: req.user.id } }).select('_id').lean(),
+      Loan.find({
+        $or: [{ userId: req.user.id }, { 'applicant.panHash': panHash }],
+        createdAt: { $gte: new Date(Date.now() - 30 * 24 * 3600 * 1000) },
+      })
+        .select('createdAt monthlyIncome creditScore status')
+        .lean(),
+    ]);
 
-    try {
-      prediction = await predictLoanRisk({
-        ...applicantPayload,
-        loanType: formulaBundle.loanType,
-        employmentStatus: formulaBundle.employmentStatus,
-        formulaScore: formulaBundle.formulaScore,
-      });
-    } catch (mlError) {
-      mlAvailable = false;
-      mlWarning = String(mlError.message || 'ML service unavailable');
-      prediction = {
-        mlScore: formulaBundle.formulaScore,
-        model: 'formula_fallback',
-        explanation: 'ML service prediction failed or timed out, so formula-based risk scoring was used.',
-      };
-    }
-
-    const mlScore = clampRiskScore(Number(prediction.mlScore));
-    const formulaScore = clampRiskScore(formulaBundle.formulaScore);
-    const finalScore = mlAvailable
-      ? clampRiskScore(0.6 * mlScore + 0.4 * formulaScore)
-      : formulaScore;
-    const category = determineCategory(finalScore);
-    const aiDecision = determineAiDecision(finalScore);
-
-    const mergedReasons = [...formulaBundle.explanationMarkers];
-    const normalizedExplanation = String(prediction.explanation || '').trim();
-    if (normalizedExplanation) {
-      mergedReasons.push(normalizedExplanation);
-    }
-
-    const explanation = mergedReasons.length
-      ? mergedReasons.join('. ')
-      : 'Risk is within acceptable policy thresholds for this loan profile.';
+    const ml = await scoreApplication(input);
+    const assessment = assessApplication(input, ml, {
+      accountName: account?.name || req.user.name,
+      phoneVerified: Boolean(account?.phoneVerified),
+      panUsedByOtherAccount: Boolean(panOwner),
+      recentApplications,
+    });
+    assessment.scoringSource = ml.source;
 
     const loan = await Loan.create({
       userId: req.user.id,
-      ...applicantPayload,
-      loanType: formulaBundle.loanType,
-      employmentStatus: formulaBundle.employmentStatus,
-      personalInfo: req.body.personalInfo || {},
-      financialInfo: req.body.financialInfo || {},
-      employmentInfo: req.body.employmentInfo || {},
-      loanDetails: req.body.loanDetails || {},
-      riskScore: finalScore,
-      mlRiskScore: mlScore,
-      formulaRiskScore: formulaScore,
-      riskCategory: category,
-      explanation,
-      status: aiDecision.status,
-      decisionSource: 'ai',
-      aiModel: prediction.model || 'random_forest',
-      adminNotes: aiDecision.reason,
-    });
-
-    if (!loan.blockchainRecorded && loan.status !== 'review') {
-      try {
-        const chainResult = await recordLoanDecision({
-          loanId: loan._id.toString(),
-          loanType: loan.loanType,
-          riskScore: loan.riskScore,
-          decision: loan.status,
-        });
-        loan.blockchainRecorded = chainResult.blockchainEnabled;
-        loan.blockchainTxHash = chainResult.txHash;
-        await loan.save();
-      } catch (chainError) {
-        // Keep loan creation non-blocking if blockchain is unavailable.
-        console.error('Blockchain logging failed:', chainError.message);
-      }
-    }
-
-    const predictionResponse = {
-      ...prediction,
-      loanType: formulaBundle.loanType,
-      riskScore: Number(finalScore.toFixed(4)),
-      mlScore: Number(mlScore.toFixed(4)),
-      formulaScore: Number(formulaScore.toFixed(4)),
-      category,
-      explanation,
-    };
-
-    if (!mlAvailable) {
-      predictionResponse.mlWarning = mlWarning;
-    }
-
-    return res.status(201).json({
-      message: 'Loan application submitted successfully',
-      loan,
-      prediction: predictionResponse,
-      decision: {
-        source: 'ai',
-        status: aiDecision.status,
-        reason: aiDecision.reason,
+      loanType: input.loanType,
+      applicant: {
+        fullName: input.fullName,
+        dateOfBirth: new Date(input.dateOfBirth),
+        panMasked: maskPan(input.pan),
+        panHash,
       },
+      employmentType: input.employmentType,
+      monthlyIncome: input.monthlyIncome,
+      yearsEmployed: input.yearsEmployed,
+      existingEmi: input.existingEmi,
+      residenceType: input.residenceType,
+      noCreditHistory: input.noCreditHistory,
+      creditScore: input.creditScore,
+      missedPayments: input.missedPayments,
+      recentCreditApplications: input.recentCreditApplications,
+      creditHistoryYears: input.creditHistoryYears,
+      loanAmount: input.loanAmount,
+      tenureMonths: input.tenureMonths,
+      purpose: input.purpose,
+      propertyValue: input.propertyValue,
+      riskScore: assessment.metrics.probabilityOfDefault ?? null,
+      riskBand: assessment.metrics.riskBand,
+      riskCategory: assessment.metrics.riskCategory,
+      status: assessment.status,
+      decisionSource: 'ai',
+      assessment,
+      aiModel: `${ml.model?.name || 'unknown'} (${ml.source})`,
     });
+
+    if (loan.status !== 'review') {
+      await recordOnChain(loan);
+    }
+
+    return res.status(201).json({ message: 'Loan application assessed', loan: sanitizeLoan(loan) });
   } catch (error) {
-    return res.status(500).json({ message: 'Unable to process loan application', error: error.message });
+    console.error('applyLoan error:', error);
+    return res.status(500).json({ message: 'Unable to process loan application. Please try again.' });
   }
+};
+
+/** Never send the PAN hash to the browser. */
+const sanitizeLoan = (loan) => {
+  const plain = typeof loan.toObject === 'function' ? loan.toObject() : { ...loan };
+  if (plain.applicant) {
+    plain.applicant = { ...plain.applicant };
+    delete plain.applicant.panHash;
+  }
+  return plain;
 };
 
 exports.getMyLoans = async (req, res) => {
   try {
-    const loans = await Loan.find({ userId: req.user.id }).sort({ createdAt: -1 });
-    return res.json({ loans });
+    const loans = await Loan.find({ userId: req.user.id }).sort({ createdAt: -1 }).lean();
+    return res.json({ loans: loans.map(sanitizeLoan) });
   } catch (error) {
-    return res.status(500).json({ message: 'Unable to load your applications', error: error.message });
+    return res.status(500).json({ message: 'Unable to load your applications' });
   }
 };
 
 exports.getAllLoans = async (req, res) => {
   try {
-    const loans = await Loan.find().populate('userId', 'name email role').sort({ createdAt: -1 });
-    return res.json({ loans });
+    const loans = await Loan.find().populate('userId', 'name email phone role').sort({ createdAt: -1 }).lean();
+    return res.json({ loans: loans.map(sanitizeLoan) });
   } catch (error) {
-    return res.status(500).json({ message: 'Unable to load applications', error: error.message });
+    return res.status(500).json({ message: 'Unable to load applications' });
   }
 };
 
@@ -187,7 +189,7 @@ exports.getLoanById = async (req, res) => {
       return res.status(404).json({ message: 'Loan application not found' });
     }
 
-    const loan = await Loan.findById(req.params.id).populate('userId', 'name email phone role');
+    const loan = await Loan.findById(req.params.id).populate('userId', 'name email phone role').lean();
     if (!loan) {
       return res.status(404).json({ message: 'Loan application not found' });
     }
@@ -198,9 +200,17 @@ exports.getLoanById = async (req, res) => {
       return res.status(404).json({ message: 'Loan application not found' });
     }
 
-    return res.json({ loan });
+    return res.json({ loan: sanitizeLoan(loan) });
   } catch (error) {
-    return res.status(500).json({ message: 'Unable to load application', error: error.message });
+    return res.status(500).json({ message: 'Unable to load application' });
+  }
+};
+
+exports.getModelInfo = async (req, res) => {
+  try {
+    return res.json(await getModelInfo());
+  } catch (error) {
+    return res.status(503).json({ message: 'Model information is temporarily unavailable' });
   }
 };
 
@@ -222,47 +232,55 @@ exports.updateLoanStatus = async (req, res) => {
       });
     }
 
-    if (!['approved', 'rejected'].includes(status)) {
-      return res.status(400).json({
-        message: 'Admin can only set status to approved or rejected',
-      });
-    }
-
     loan.status = status;
     loan.decisionSource = 'admin';
-    if (typeof adminNotes === 'string') {
-      loan.adminNotes = adminNotes;
+    loan.reviewedBy = mongoose.isValidObjectId(req.user.id) ? req.user.id : undefined;
+    loan.reviewedAt = new Date();
+    if (typeof adminNotes === 'string' && adminNotes.trim()) {
+      loan.adminNotes = adminNotes.trim();
+    }
+
+    if (loan.assessment && Object.keys(loan.assessment).length) {
+      const note = loan.adminNotes ? ` Officer's note: ${loan.adminNotes}` : '';
+      loan.assessment = {
+        ...loan.assessment,
+        status,
+        headline: status === 'approved' ? 'Approved after manual review by a loan officer.' : 'Declined after manual review by a loan officer.',
+        summary: `${loan.assessment.summary || ''} A loan officer reviewed the flagged points and ${status === 'approved' ? 'approved' : 'declined'} the application.${note}`.trim(),
+      };
+      loan.markModified('assessment');
+    }
+    if (loan.riskBand) {
+      loan.riskCategory = riskCategoryFor(loan.riskBand);
     }
 
     await loan.save();
 
-    if (!loan.blockchainRecorded) {
-      // recordLoanDecision never throws; it reports failures in its result.
-      const chainResult = await recordLoanDecision({
-        loanId: loan._id.toString(),
+    await logAdminAction({
+      adminId: req.user.id,
+      action: status === 'approved' ? 'LOAN_APPROVED' : 'LOAN_REJECTED',
+      entityType: 'loan',
+      entityId: loan._id,
+      notes: loan.adminNotes,
+      metadata: {
         loanType: loan.loanType,
-        riskScore: loan.riskScore,
-        decision: status,
-      });
+        loanAmount: loan.loanAmount,
+        riskBand: loan.riskBand,
+        probabilityOfDefault: loan.riskScore,
+        previousStatus: 'review',
+      },
+    });
 
-      if (chainResult.blockchainEnabled) {
-        loan.blockchainRecorded = true;
-        loan.blockchainTxHash = chainResult.txHash;
-        await loan.save();
-      } else {
-        return res.json({
-          message: 'Loan status updated successfully, but blockchain logging is unavailable',
-          loan,
-          blockchainWarning: chainResult.error,
-        });
-      }
-    }
-
+    const chainResult = loan.blockchainRecorded ? { blockchainEnabled: true } : await recordOnChain(loan);
     return res.json({
-      message: 'Loan status updated successfully',
-      loan,
+      message: chainResult.blockchainEnabled
+        ? 'Loan status updated successfully'
+        : 'Loan status updated successfully, but blockchain logging is unavailable',
+      loan: sanitizeLoan(loan),
+      ...(chainResult.blockchainEnabled ? {} : { blockchainWarning: chainResult.error }),
     });
   } catch (error) {
-    return res.status(500).json({ message: 'Unable to update loan status', error: error.message });
+    console.error('updateLoanStatus error:', error);
+    return res.status(500).json({ message: 'Unable to update loan status' });
   }
 };

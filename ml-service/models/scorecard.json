@@ -1,0 +1,91 @@
+{
+  "modelVersion": "lc-pd-20261115-scorecard",
+  "note": "Logistic-regression fallback used by the backend only when the ML service is unreachable.",
+  "personal": {
+    "intercept": -1.2603335067982522,
+    "numeric": [
+      {
+        "name": "credit_score",
+        "median": 712.0,
+        "mean": 715.0463841103241,
+        "scale": 36.17719694665362,
+        "coef": -0.40575274882311746
+      },
+      {
+        "name": "existing_debt_to_income",
+        "median": 13.48,
+        "mean": 13.376162897418396,
+        "scale": 6.725427609053125,
+        "coef": 0.0485743821279716
+      },
+      {
+        "name": "tenure_months",
+        "median": 36.0,
+        "mean": 42.20826959734544,
+        "scale": 10.509798235121686,
+        "coef": 0.36850244248622266
+      },
+      {
+        "name": "credit_applications_6m",
+        "median": 1.0,
+        "mean": 1.0729767255783305,
+        "scale": 1.4450509160908056,
+        "coef": 0.22645837181914885
+      }
+    ],
+    "categorical": {
+      "residence": {
+        "rented": -0.35879152602975123,
+        "owned": -0.362883746618576,
+        "owned_mortgage": -0.5060412845493677,
+        "family": 0.0
+      },
+      "purpose": {
+        "debt_consolidation": -0.24459928147046398,
+        "home_renovation": -0.24009376915885275,
+        "medical": -0.005582092809860974,
+        "wedding": -0.5605312730875384,
+        "education": 0.20032305077884394,
+        "vehicle": -0.5103174078365144,
+        "business": 0.6534625691592374,
+        "travel": -0.07792527882908283,
+        "major_purchase": -0.4323197134242935,
+        "other": -0.0101333605191564
+      }
+    }
+  },
+  "property": {
+    "intercept": -1.3459125704903465,
+    "numeric": [
+      {
+        "name": "credit_score",
+        "median": 712.0,
+        "mean": 715.0463841103241,
+        "scale": 36.17719694665362,
+        "coef": -0.3878247598319584
+      },
+      {
+        "name": "existing_debt_to_income",
+        "median": 13.48,
+        "mean": 13.376162897418396,
+        "scale": 6.725427609053125,
+        "coef": 0.05758875476192545
+      },
+      {
+        "name": "credit_applications_6m",
+        "median": 1.0,
+        "mean": 1.0729767255783305,
+        "scale": 1.4450509160908056,
+        "coef": 0.22117890416962682
+      }
+    ],
+    "categorical": {
+      "residence": {
+        "rented": -0.43743345633050285,
+        "owned": -0.4140216993873982,
+        "owned_mortgage": -0.48957853335451246,
+        "family": 0.0
+      }
+    }
+  }
+}

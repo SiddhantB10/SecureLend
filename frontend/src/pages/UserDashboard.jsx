@@ -63,7 +63,7 @@ const UserDashboard = () => {
     >
       <div className="grid gap-4 md:grid-cols-3">
         <StatCard label="Total applications" value={totalApplications} hint="All requests submitted from your account" />
-        <StatCard label="In review" value={pendingApplications} hint="Medium-risk cases awaiting admin decision" />
+        <StatCard label="In review" value={pendingApplications} hint="Awaiting a loan officer's review" />
         <StatCard label="Approved" value={approvedApplications} hint="Auto-approved or admin-approved applications" />
       </div>
 
@@ -71,7 +71,7 @@ const UserDashboard = () => {
         <SectionHeading
           eyebrow="Application history"
           title="Previous loan requests"
-          subtitle="Each application includes the predicted risk score, category, and review status."
+          subtitle="Open any application to see the decision, the reasons behind it, and what you can do next."
         />
 
         <div className="mt-6 space-y-4">
@@ -89,34 +89,32 @@ const UserDashboard = () => {
                 className="rounded-2xl border border-gray-200 bg-white p-5"
               >
                 <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
-                  <div>
+                  <div className="min-w-0">
                     <div className="flex flex-wrap items-center gap-3">
-                      <h3 className="text-lg font-semibold text-gray-900">Loan {loan._id.slice(-6).toUpperCase()}</h3>
+                      <h3 className="text-lg font-semibold text-gray-900">
+                        {loan.loanType === 'property' ? 'Property loan' : 'Personal loan'} · {formatInr(loan.loanAmount)}
+                      </h3>
                       <StatusBadge value={loan.status} />
                     </div>
-                    <p className="mt-2 text-sm text-gray-600">
-                      Type {(loan.loanType || 'personal').toUpperCase()} | Loan amount {formatInr(loan.loanAmount)} | Credit score {loan.creditScore}
+                    <p className="mt-2 text-sm text-gray-700">
+                      {loan.assessment?.headline || loan.explanation || 'Decision details unavailable.'}
                     </p>
                     <p className="mt-1 text-xs text-gray-500">
-                      Blockchain tx id:{' '}
-                      {loan.blockchainTxHash ? (
-                        <a
-                          href={`https://hashscan.io/testnet/transaction/${loan.blockchainTxHash}`}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="font-mono text-neon-500 underline hover:text-neon-400 break-all"
-                        >
-                          {loan.blockchainTxHash}
-                        </a>
-                      ) : (
-                        <span className="text-gray-700">Not recorded yet</span>
-                      )}
+                      Applied {new Date(loan.createdAt).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' })}
+                      {loan.tenureMonths ? ` · ${loan.tenureMonths} months` : ''} · Ref {loan._id.slice(-6).toUpperCase()}
                     </p>
                   </div>
-                  <div className="text-right">
-                    <p className="text-xs uppercase tracking-[0.25em] text-gray-600">Risk score</p>
-                    <p className="mt-2 text-2xl font-semibold text-neon-500">{Math.round((loan.riskScore || 0) * 100)}%</p>
-                    <p className="text-sm text-gray-600">{loan.riskCategory} risk</p>
+                  <div className="flex shrink-0 items-center gap-5">
+                    <div className="text-right">
+                      <p className="text-xs uppercase tracking-[0.25em] text-gray-600">Risk</p>
+                      <p className="mt-1 text-lg font-semibold text-neon-500">{loan.riskBand || loan.riskCategory || '—'}</p>
+                    </div>
+                    <Link
+                      to={`/result/${loan._id}`}
+                      className="inline-flex items-center gap-1 rounded-full border border-neon-500/40 px-4 py-2 text-sm font-semibold text-neon-500 hover:bg-neon-500/10"
+                    >
+                      View decision <ArrowRight className="h-4 w-4" />
+                    </Link>
                   </div>
                 </div>
               </motion.div>

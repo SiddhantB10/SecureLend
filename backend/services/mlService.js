@@ -36,6 +36,19 @@ const predictLoanRisk = async (payload) => {
   throw new Error(`ML prediction failed (${errors.join(' | ')})`);
 };
 
+const getModelInfo = async () => {
+  const errors = [];
+  for (const baseUrl of getCandidateBaseUrls()) {
+    try {
+      const response = await axios.get(`${baseUrl}/model-info`, { timeout: 10000 });
+      return response.data;
+    } catch (error) {
+      errors.push(`${baseUrl}: ${error.message}`);
+    }
+  }
+  throw new Error(`Model info unavailable (${errors.join(' | ')})`);
+};
+
 /**
  * Ping the ML service so a sleeping free-tier instance wakes up before the
  * first loan application arrives. Runs at boot and every 10 minutes.
@@ -50,5 +63,6 @@ const startMlKeepWarm = () => {
 
 module.exports = {
   predictLoanRisk,
+  getModelInfo,
   startMlKeepWarm,
 };

@@ -1,0 +1,805 @@
+{
+  "modelVersion": "lc-pd-20261115",
+  "trainedAt": "2026-11-15T21:35:42+00:00",
+  "dataset": {
+    "name": "Lending Club personal loans 2007-2011",
+    "loans": 42493,
+    "defaultRate": 0.1512,
+    "target": "Charged Off (defaulted) vs Fully Paid",
+    "issuedFrom": "2007-06",
+    "issuedTo": "2011-12"
+  },
+  "riskBands": [
+    {
+      "band": "Very low",
+      "min": 0.0,
+      "max": 0.07
+    },
+    {
+      "band": "Low",
+      "min": 0.07,
+      "max": 0.12
+    },
+    {
+      "band": "Medium",
+      "min": 0.12,
+      "max": 0.2
+    },
+    {
+      "band": "High",
+      "min": 0.2,
+      "max": 0.3
+    },
+    {
+      "band": "Very high",
+      "min": 0.3,
+      "max": 1.0
+    }
+  ],
+  "personal": {
+    "selectedModel": "gradient_boosting",
+    "features": [
+      "credit_score",
+      "existing_debt_to_income",
+      "tenure_months",
+      "years_employed",
+      "missed_payments_2y",
+      "credit_applications_6m",
+      "credit_history_years",
+      "residence",
+      "purpose"
+    ],
+    "trainLoans": 33811,
+    "testLoans": 8682,
+    "testPeriodStart": "2011-09",
+    "candidates": {
+      "logistic_regression": {
+        "cvRocAucMean": 0.6821,
+        "cvRocAucStd": 0.0068,
+        "outOfTimeTest": {
+          "rocAuc": 0.6896,
+          "gini": 0.3793,
+          "ks": 0.2862,
+          "prAuc": 0.294,
+          "brierScore": 0.1267,
+          "logLoss": 0.411,
+          "baseDefaultRate": 0.1608,
+          "meanPredictedPd": 0.1489,
+          "calibrationByDecile": [
+            {
+              "decile": 0.0,
+              "predicted": 0.0533,
+              "actual": 0.0345,
+              "loans": 869
+            },
+            {
+              "decile": 1.0,
+              "predicted": 0.0767,
+              "actual": 0.0818,
+              "loans": 868
+            },
+            {
+              "decile": 2.0,
+              "predicted": 0.0931,
+              "actual": 0.0887,
+              "loans": 868
+            },
+            {
+              "decile": 3.0,
+              "predicted": 0.1077,
+              "actual": 0.106,
+              "loans": 868
+            },
+            {
+              "decile": 4.0,
+              "predicted": 0.1227,
+              "actual": 0.1244,
+              "loans": 868
+            },
+            {
+              "decile": 5.0,
+              "predicted": 0.1401,
+              "actual": 0.1498,
+              "loans": 868
+            },
+            {
+              "decile": 6.0,
+              "predicted": 0.1608,
+              "actual": 0.1797,
+              "loans": 868
+            },
+            {
+              "decile": 7.0,
+              "predicted": 0.1882,
+              "actual": 0.2316,
+              "loans": 868
+            },
+            {
+              "decile": 8.0,
+              "predicted": 0.2293,
+              "actual": 0.2627,
+              "loans": 868
+            },
+            {
+              "decile": 9.0,
+              "predicted": 0.3171,
+              "actual": 0.3487,
+              "loans": 869
+            }
+          ],
+          "riskBands": [
+            {
+              "band": "Very low",
+              "pdRange": [
+                0.0,
+                0.07
+              ],
+              "shareOfApplicants": 0.115,
+              "observedDefaultRate": 0.0371
+            },
+            {
+              "band": "Low",
+              "pdRange": [
+                0.07,
+                0.12
+              ],
+              "shareOfApplicants": 0.3188,
+              "observedDefaultRate": 0.0972
+            },
+            {
+              "band": "Medium",
+              "pdRange": [
+                0.12,
+                0.2
+              ],
+              "shareOfApplicants": 0.3511,
+              "observedDefaultRate": 0.1696
+            },
+            {
+              "band": "High",
+              "pdRange": [
+                0.2,
+                0.3
+              ],
+              "shareOfApplicants": 0.1651,
+              "observedDefaultRate": 0.2812
+            },
+            {
+              "band": "Very high",
+              "pdRange": [
+                0.3,
+                1.0
+              ],
+              "shareOfApplicants": 0.0501,
+              "observedDefaultRate": 0.3908
+            }
+          ]
+        }
+      },
+      "gradient_boosting": {
+        "cvRocAucMean": 0.681,
+        "cvRocAucStd": 0.008,
+        "outOfTimeTest": {
+          "rocAuc": 0.6903,
+          "gini": 0.3806,
+          "ks": 0.2905,
+          "prAuc": 0.2872,
+          "brierScore": 0.1269,
+          "logLoss": 0.4109,
+          "baseDefaultRate": 0.1608,
+          "meanPredictedPd": 0.1484,
+          "calibrationByDecile": [
+            {
+              "decile": 0.0,
+              "predicted": 0.0443,
+              "actual": 0.0345,
+              "loans": 869
+            },
+            {
+              "decile": 1.0,
+              "predicted": 0.0704,
+              "actual": 0.0853,
+              "loans": 868
+            },
+            {
+              "decile": 2.0,
+              "predicted": 0.0931,
+              "actual": 0.0933,
+              "loans": 868
+            },
+            {
+              "decile": 3.0,
+              "predicted": 0.1081,
+              "actual": 0.0991,
+              "loans": 868
+            },
+            {
+              "decile": 4.0,
+              "predicted": 0.1246,
+              "actual": 0.1267,
+              "loans": 868
+            },
+            {
+              "decile": 5.0,
+              "predicted": 0.1436,
+              "actual": 0.1429,
+              "loans": 868
+            },
+            {
+              "decile": 6.0,
+              "predicted": 0.1688,
+              "actual": 0.1797,
+              "loans": 868
+            },
+            {
+              "decile": 7.0,
+              "predicted": 0.1974,
+              "actual": 0.2316,
+              "loans": 868
+            },
+            {
+              "decile": 8.0,
+              "predicted": 0.235,
+              "actual": 0.2615,
+              "loans": 868
+            },
+            {
+              "decile": 9.0,
+              "predicted": 0.2989,
+              "actual": 0.3533,
+              "loans": 869
+            }
+          ],
+          "riskBands": [
+            {
+              "band": "Very low",
+              "pdRange": [
+                0.0,
+                0.07
+              ],
+              "shareOfApplicants": 0.1475,
+              "observedDefaultRate": 0.0476
+            },
+            {
+              "band": "Low",
+              "pdRange": [
+                0.07,
+                0.12
+              ],
+              "shareOfApplicants": 0.2771,
+              "observedDefaultRate": 0.096
+            },
+            {
+              "band": "Medium",
+              "pdRange": [
+                0.12,
+                0.2
+              ],
+              "shareOfApplicants": 0.3375,
+              "observedDefaultRate": 0.1652
+            },
+            {
+              "band": "High",
+              "pdRange": [
+                0.2,
+                0.3
+              ],
+              "shareOfApplicants": 0.2042,
+              "observedDefaultRate": 0.2871
+            },
+            {
+              "band": "Very high",
+              "pdRange": [
+                0.3,
+                1.0
+              ],
+              "shareOfApplicants": 0.0336,
+              "observedDefaultRate": 0.3801
+            }
+          ]
+        }
+      }
+    },
+    "test": {
+      "rocAuc": 0.6903,
+      "gini": 0.3806,
+      "ks": 0.2905,
+      "prAuc": 0.2872,
+      "brierScore": 0.1269,
+      "logLoss": 0.4109,
+      "baseDefaultRate": 0.1608,
+      "meanPredictedPd": 0.1484,
+      "calibrationByDecile": [
+        {
+          "decile": 0.0,
+          "predicted": 0.0443,
+          "actual": 0.0345,
+          "loans": 869
+        },
+        {
+          "decile": 1.0,
+          "predicted": 0.0704,
+          "actual": 0.0853,
+          "loans": 868
+        },
+        {
+          "decile": 2.0,
+          "predicted": 0.0931,
+          "actual": 0.0933,
+          "loans": 868
+        },
+        {
+          "decile": 3.0,
+          "predicted": 0.1081,
+          "actual": 0.0991,
+          "loans": 868
+        },
+        {
+          "decile": 4.0,
+          "predicted": 0.1246,
+          "actual": 0.1267,
+          "loans": 868
+        },
+        {
+          "decile": 5.0,
+          "predicted": 0.1436,
+          "actual": 0.1429,
+          "loans": 868
+        },
+        {
+          "decile": 6.0,
+          "predicted": 0.1688,
+          "actual": 0.1797,
+          "loans": 868
+        },
+        {
+          "decile": 7.0,
+          "predicted": 0.1974,
+          "actual": 0.2316,
+          "loans": 868
+        },
+        {
+          "decile": 8.0,
+          "predicted": 0.235,
+          "actual": 0.2615,
+          "loans": 868
+        },
+        {
+          "decile": 9.0,
+          "predicted": 0.2989,
+          "actual": 0.3533,
+          "loans": 869
+        }
+      ],
+      "riskBands": [
+        {
+          "band": "Very low",
+          "pdRange": [
+            0.0,
+            0.07
+          ],
+          "shareOfApplicants": 0.1475,
+          "observedDefaultRate": 0.0476
+        },
+        {
+          "band": "Low",
+          "pdRange": [
+            0.07,
+            0.12
+          ],
+          "shareOfApplicants": 0.2771,
+          "observedDefaultRate": 0.096
+        },
+        {
+          "band": "Medium",
+          "pdRange": [
+            0.12,
+            0.2
+          ],
+          "shareOfApplicants": 0.3375,
+          "observedDefaultRate": 0.1652
+        },
+        {
+          "band": "High",
+          "pdRange": [
+            0.2,
+            0.3
+          ],
+          "shareOfApplicants": 0.2042,
+          "observedDefaultRate": 0.2871
+        },
+        {
+          "band": "Very high",
+          "pdRange": [
+            0.3,
+            1.0
+          ],
+          "shareOfApplicants": 0.0336,
+          "observedDefaultRate": 0.3801
+        }
+      ]
+    }
+  },
+  "property": {
+    "selectedModel": "gradient_boosting",
+    "features": [
+      "credit_score",
+      "existing_debt_to_income",
+      "years_employed",
+      "missed_payments_2y",
+      "credit_applications_6m",
+      "credit_history_years",
+      "residence"
+    ],
+    "trainLoans": 33811,
+    "testLoans": 8682,
+    "testPeriodStart": "2011-09",
+    "candidates": {
+      "logistic_regression": {
+        "cvRocAucMean": 0.636,
+        "cvRocAucStd": 0.0037,
+        "outOfTimeTest": {
+          "rocAuc": 0.625,
+          "gini": 0.2501,
+          "ks": 0.1803,
+          "prAuc": 0.2292,
+          "brierScore": 0.1319,
+          "logLoss": 0.4292,
+          "baseDefaultRate": 0.1608,
+          "meanPredictedPd": 0.1407,
+          "calibrationByDecile": [
+            {
+              "decile": 0.0,
+              "predicted": 0.0637,
+              "actual": 0.0564,
+              "loans": 869
+            },
+            {
+              "decile": 1.0,
+              "predicted": 0.0863,
+              "actual": 0.1014,
+              "loans": 868
+            },
+            {
+              "decile": 2.0,
+              "predicted": 0.1024,
+              "actual": 0.1152,
+              "loans": 868
+            },
+            {
+              "decile": 3.0,
+              "predicted": 0.1163,
+              "actual": 0.1336,
+              "loans": 868
+            },
+            {
+              "decile": 4.0,
+              "predicted": 0.1298,
+              "actual": 0.1624,
+              "loans": 868
+            },
+            {
+              "decile": 5.0,
+              "predicted": 0.143,
+              "actual": 0.1774,
+              "loans": 868
+            },
+            {
+              "decile": 6.0,
+              "predicted": 0.1575,
+              "actual": 0.174,
+              "loans": 868
+            },
+            {
+              "decile": 7.0,
+              "predicted": 0.174,
+              "actual": 0.1763,
+              "loans": 868
+            },
+            {
+              "decile": 8.0,
+              "predicted": 0.196,
+              "actual": 0.2396,
+              "loans": 868
+            },
+            {
+              "decile": 9.0,
+              "predicted": 0.2379,
+              "actual": 0.2716,
+              "loans": 869
+            }
+          ],
+          "riskBands": [
+            {
+              "band": "Very low",
+              "pdRange": [
+                0.0,
+                0.07
+              ],
+              "shareOfApplicants": 0.0688,
+              "observedDefaultRate": 0.057
+            },
+            {
+              "band": "Low",
+              "pdRange": [
+                0.07,
+                0.12
+              ],
+              "shareOfApplicants": 0.308,
+              "observedDefaultRate": 0.1066
+            },
+            {
+              "band": "Medium",
+              "pdRange": [
+                0.12,
+                0.2
+              ],
+              "shareOfApplicants": 0.488,
+              "observedDefaultRate": 0.182
+            },
+            {
+              "band": "High",
+              "pdRange": [
+                0.2,
+                0.3
+              ],
+              "shareOfApplicants": 0.1334,
+              "observedDefaultRate": 0.2599
+            },
+            {
+              "band": "Very high",
+              "pdRange": [
+                0.3,
+                1.0
+              ],
+              "shareOfApplicants": 0.0018,
+              "observedDefaultRate": 0.3125
+            }
+          ]
+        }
+      },
+      "gradient_boosting": {
+        "cvRocAucMean": 0.6335,
+        "cvRocAucStd": 0.0054,
+        "outOfTimeTest": {
+          "rocAuc": 0.6233,
+          "gini": 0.2467,
+          "ks": 0.1724,
+          "prAuc": 0.2318,
+          "brierScore": 0.132,
+          "logLoss": 0.4298,
+          "baseDefaultRate": 0.1608,
+          "meanPredictedPd": 0.1391,
+          "calibrationByDecile": [
+            {
+              "decile": 0.0,
+              "predicted": 0.0588,
+              "actual": 0.0644,
+              "loans": 869
+            },
+            {
+              "decile": 1.0,
+              "predicted": 0.0827,
+              "actual": 0.0887,
+              "loans": 868
+            },
+            {
+              "decile": 2.0,
+              "predicted": 0.1049,
+              "actual": 0.129,
+              "loans": 868
+            },
+            {
+              "decile": 3.0,
+              "predicted": 0.1211,
+              "actual": 0.145,
+              "loans": 869
+            },
+            {
+              "decile": 4.0,
+              "predicted": 0.1329,
+              "actual": 0.1511,
+              "loans": 867
+            },
+            {
+              "decile": 5.0,
+              "predicted": 0.1439,
+              "actual": 0.1705,
+              "loans": 868
+            },
+            {
+              "decile": 6.0,
+              "predicted": 0.1574,
+              "actual": 0.1705,
+              "loans": 868
+            },
+            {
+              "decile": 7.0,
+              "predicted": 0.1737,
+              "actual": 0.1878,
+              "loans": 868
+            },
+            {
+              "decile": 8.0,
+              "predicted": 0.1902,
+              "actual": 0.22,
+              "loans": 868
+            },
+            {
+              "decile": 9.0,
+              "predicted": 0.2249,
+              "actual": 0.2808,
+              "loans": 869
+            }
+          ],
+          "riskBands": [
+            {
+              "band": "Very low",
+              "pdRange": [
+                0.0,
+                0.07
+              ],
+              "shareOfApplicants": 0.0737,
+              "observedDefaultRate": 0.0531
+            },
+            {
+              "band": "Low",
+              "pdRange": [
+                0.07,
+                0.12
+              ],
+              "shareOfApplicants": 0.262,
+              "observedDefaultRate": 0.1073
+            },
+            {
+              "band": "Medium",
+              "pdRange": [
+                0.12,
+                0.2
+              ],
+              "shareOfApplicants": 0.5673,
+              "observedDefaultRate": 0.1781
+            },
+            {
+              "band": "High",
+              "pdRange": [
+                0.2,
+                0.3
+              ],
+              "shareOfApplicants": 0.097,
+              "observedDefaultRate": 0.2862
+            },
+            {
+              "band": "Very high",
+              "pdRange": [
+                0.3,
+                1.0
+              ],
+              "shareOfApplicants": 0.0,
+              "observedDefaultRate": null
+            }
+          ]
+        }
+      }
+    },
+    "test": {
+      "rocAuc": 0.6233,
+      "gini": 0.2467,
+      "ks": 0.1724,
+      "prAuc": 0.2318,
+      "brierScore": 0.132,
+      "logLoss": 0.4298,
+      "baseDefaultRate": 0.1608,
+      "meanPredictedPd": 0.1391,
+      "calibrationByDecile": [
+        {
+          "decile": 0.0,
+          "predicted": 0.0588,
+          "actual": 0.0644,
+          "loans": 869
+        },
+        {
+          "decile": 1.0,
+          "predicted": 0.0827,
+          "actual": 0.0887,
+          "loans": 868
+        },
+        {
+          "decile": 2.0,
+          "predicted": 0.1049,
+          "actual": 0.129,
+          "loans": 868
+        },
+        {
+          "decile": 3.0,
+          "predicted": 0.1211,
+          "actual": 0.145,
+          "loans": 869
+        },
+        {
+          "decile": 4.0,
+          "predicted": 0.1329,
+          "actual": 0.1511,
+          "loans": 867
+        },
+        {
+          "decile": 5.0,
+          "predicted": 0.1439,
+          "actual": 0.1705,
+          "loans": 868
+        },
+        {
+          "decile": 6.0,
+          "predicted": 0.1574,
+          "actual": 0.1705,
+          "loans": 868
+        },
+        {
+          "decile": 7.0,
+          "predicted": 0.1737,
+          "actual": 0.1878,
+          "loans": 868
+        },
+        {
+          "decile": 8.0,
+          "predicted": 0.1902,
+          "actual": 0.22,
+          "loans": 868
+        },
+        {
+          "decile": 9.0,
+          "predicted": 0.2249,
+          "actual": 0.2808,
+          "loans": 869
+        }
+      ],
+      "riskBands": [
+        {
+          "band": "Very low",
+          "pdRange": [
+            0.0,
+            0.07
+          ],
+          "shareOfApplicants": 0.0737,
+          "observedDefaultRate": 0.0531
+        },
+        {
+          "band": "Low",
+          "pdRange": [
+            0.07,
+            0.12
+          ],
+          "shareOfApplicants": 0.262,
+          "observedDefaultRate": 0.1073
+        },
+        {
+          "band": "Medium",
+          "pdRange": [
+            0.12,
+            0.2
+          ],
+          "shareOfApplicants": 0.5673,
+          "observedDefaultRate": 0.1781
+        },
+        {
+          "band": "High",
+          "pdRange": [
+            0.2,
+            0.3
+          ],
+          "shareOfApplicants": 0.097,
+          "observedDefaultRate": 0.2862
+        },
+        {
+          "band": "Very high",
+          "pdRange": [
+            0.3,
+            1.0
+          ],
+          "shareOfApplicants": 0.0,
+          "observedDefaultRate": null
+        }
+      ]
+    }
+  }
+}

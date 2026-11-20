@@ -47,6 +47,14 @@ const App = () => (
         }
       />
       <Route
+        path="/result/:id"
+        element={
+          <ProtectedRoute>
+            <ResultPage />
+          </ProtectedRoute>
+        }
+      />
+      <Route
         path="/admin"
         element={
           <ProtectedRoute role="admin">
